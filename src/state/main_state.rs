@@ -49,7 +49,7 @@ pub const HEIGHT: f32 = 900.0;
 
 fn initialize_camera(world: &mut World){
     let mut transform = Transform::default();
-    transform.set_translation_xyz(WIDTH / 2.0, HEIGHT / 2.0, 1.0);
+    transform.set_translation_xyz(WIDTH / 2.0 - 22.5, HEIGHT / 2.0 + 22.5, 1.0);
 
     world.create_entity()
         .with(Camera::standard_2d(WIDTH, HEIGHT))

@@ -1,11 +1,10 @@
 use amethyst::{
-//    prelude::*,
+    prelude::*,
     ecs::prelude::{Component, DenseVecStorage, Entity},
 };
 
-pub struct StaticBlock;
+pub struct StaticBLock;
 
-impl Component for StaticBlock {
+impl Component for StaticBLock {
     type Storage = DenseVecStorage<Self>;
 }
-
