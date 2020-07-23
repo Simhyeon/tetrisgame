@@ -25,20 +25,36 @@ impl<'s> System<'s> for StackSystem {
       if handler.blocks.len() == 0 {
         return;
       }
-      'outer: for static_local in locals.join(){
-          for (_, local, ()) in (&dyn_blocks, &locals, !&stt_blocks).join() {
-              // get 이 consume 하는 지를 확인해 보자. 
-              if local.translation().y == 45.0 {
-                  //stack = true;
-                  println!("CHECKED ground!");
-                  for entity in handler.blocks.clone() {
-                      stt_blocks.insert(entity, StaticBlock);
-                  }
-                  handler.blocks.clear();
-                  break 'outer;
+      for (_, local, ()) in (&dyn_blocks, &locals, !&stt_blocks).join() {
+          // get 이 consume 하는 지를 확인해 보자. 
+          if local.translation().y == 45.0 {
+              println!("{}", local.translation().y);
+              //stack = true;
+              for entity in handler.blocks.clone() {
+                  stt_blocks.insert(entity, StaticBlock).expect("ERR");
               }
-              // Check all locals without dynamicBlocks
+              handler.blocks.clear();
+              return;
           }
+          // Check all locals without dynamicBlocks
+      }
+
+      let mut do_stack = false;
+      for (local, _) in (&locals, &stt_blocks).join() {
+        for entity in handler.blocks.clone() {
+            if locals.get(entity).unwrap().translation().y == local.translation().y + 45.0 {
+                do_stack = true;
+                println!("Stack upon other blocks");
+                break;
+            }
+        }
+      }
+
+      if do_stack {
+          for entity in handler.blocks.clone() {
+              stt_blocks.insert(entity, StaticBlock).expect("ERR");
+          }
+          handler.blocks.clear();
       }
   }
 }

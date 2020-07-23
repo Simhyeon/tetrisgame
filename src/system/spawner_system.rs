@@ -17,6 +17,7 @@ use crate::component::dyn_block::{DynBlockHandler, DynamicBlock};
 pub struct SpawnerSystem;
 
 
+// TODO 현재 Spanwer는 블록이 겹칠 경우를 상정하지 않고 있다. 구현되어야 한다.
 
 impl<'s> System<'s> for SpawnerSystem{
     type SystemData = (
@@ -31,10 +32,10 @@ impl<'s> System<'s> for SpawnerSystem{
             println!("SPawning");
             // Transform setup
             let mut block_transforms = vec![Transform::default(); 4];
-            let mut yoffset = 45.0; // which is the size of block
+            let mut yoffset = 0.0; // which is the size of block
 
             for item in &mut block_transforms {
-                item.set_translation_xyz(WIDTH/ 2.0, HEIGHT - yoffset, 0.0);
+                item.set_translation_xyz(WIDTH - 45.0 * 5.0, HEIGHT - yoffset, 0.0);
                 yoffset += 45.0;
             }
 

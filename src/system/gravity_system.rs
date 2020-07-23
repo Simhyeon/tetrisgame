@@ -9,7 +9,7 @@ use amethyst::{
 
 use crate::component::dyn_block::{DynamicBlock, DynBlockHandler};
 
-const MOVEDELAY: f32 = 1.0;
+const MOVEDELAY: f32 = 0.6;
 
 #[derive(SystemDesc, Default)]
 pub struct GravitySystem{
