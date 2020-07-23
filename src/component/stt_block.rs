@@ -3,8 +3,8 @@ use amethyst::{
     ecs::prelude::{Component, DenseVecStorage, Entity},
 };
 
-pub struct StaticBLock;
+pub struct StaticBlock;
 
-impl Component for StaticBLock {
+impl Component for StaticBlock {
     type Storage = DenseVecStorage<Self>;
 }

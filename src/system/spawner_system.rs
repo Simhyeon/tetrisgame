@@ -60,7 +60,8 @@ impl<'s> System<'s> for SpawnerSystem{
                 updater.insert(
                     new_block,
                     sprite_render.clone(),
-                )
+                );
+                handler.blocks.push(new_block);
             }
         }
     }

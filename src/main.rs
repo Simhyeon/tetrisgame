@@ -23,7 +23,10 @@ use crate::system::{
     spawner_system::SpawnerSystem,
 };
 
-use crate::state::main_state::MainState;
+use crate::state::{
+    main_state::MainState,
+    loading_state::LoadingState,
+};
 use crate::config::MovementBindingTypes;
 
 fn main() -> amethyst::Result<()> {
@@ -56,14 +59,14 @@ fn main() -> amethyst::Result<()> {
             //.with_plugin(RenderUi::default()) TODO 아직 UI는 필요없다. 
         )?
         .with_bundle(TransformBundle::new())?
-        .with_bundle(input_bundle)? 
-        .with(KeyInputSystem::default(), "keyinput_system", &[])
-        .with(GravitySystem::default(), "gravity_system", &[])
-        .with(StackSystem::default(), "stack_system", &["gravity_system"])
-        .with(SpawnerSystem::default(), "spawner_system", &["stack_system"]);
+        .with_bundle(input_bundle)?;
+        //.with(KeyInputSystem::default(), "keyinput_system", &[])
+        //.with(GravitySystem::default(), "gravity_system", &[])
+        //.with(StackSystem::default(), "stack_system", &["gravity_system"])
+        //.with(SpawnerSystem::default(), "spawner_system", &["stack_system"]);
 
     let assets_dir = app_root.join("assets");
-    let mut game = Application::new(assets_dir, MainState::default(), game_data)?;
+    let mut game = Application::new(assets_dir, LoadingState::default(), game_data)?;
     game.run();
 
     Ok(())
