@@ -1,17 +1,21 @@
 use amethyst::{
-    core::math::Vector3,
-    core::SystemDesc,
     core::transform::Transform,
     derive::SystemDesc,
-    ecs::prelude::{Join, System, SystemData, WriteStorage, ReadStorage, ReadExpect, Read, WriteExpect, Entity}
+    ecs::prelude::{Join, System, SystemData, WriteStorage, ReadStorage, WriteExpect, Write},
+    shrev::EventChannel,
 };
 
 use crate::component::dyn_block::{DynamicBlock, DynBlockHandler};
 use crate::component::stt_block::StaticBlock;
 
+#[derive(Debug)]
+pub enum StackEvent {
+    Stacked,
+    None,
+}
+
 #[derive(SystemDesc, Default)]
 pub struct StackSystem;
-
 
 impl<'s> System<'s> for StackSystem {
   type SystemData = (
@@ -19,9 +23,10 @@ impl<'s> System<'s> for StackSystem {
       ReadStorage<'s, DynamicBlock>,
       WriteStorage<'s, StaticBlock>,
       ReadStorage<'s, Transform>,
+      Write<'s, EventChannel<StackEvent>>,
   );
 
-  fn run(&mut self, (mut handler, dyn_blocks, mut stt_blocks, locals): Self::SystemData) {
+  fn run(&mut self, (mut handler, dyn_blocks, mut stt_blocks, locals, mut event_channel): Self::SystemData) {
       if handler.blocks.len() == 0 {
         return;
       }
@@ -34,6 +39,7 @@ impl<'s> System<'s> for StackSystem {
                   stt_blocks.insert(entity, StaticBlock).expect("ERR");
               }
               handler.blocks.clear();
+              event_channel.single_write(StackEvent::Stacked);
               return;
           }
           // Check all locals without dynamicBlocks
@@ -45,6 +51,7 @@ impl<'s> System<'s> for StackSystem {
             if locals.get(entity).unwrap().translation().y == local.translation().y + 45.0 {
                 do_stack = true;
                 println!("Stack upon other blocks");
+                event_channel.single_write(StackEvent::Stacked);
                 break;
             }
         }

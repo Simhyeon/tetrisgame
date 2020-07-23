@@ -1,6 +1,6 @@
 use amethyst::{
-    prelude::*,
-    ecs::prelude::{Component, DenseVecStorage, Entity},
+    //prelude::*,
+    ecs::prelude::{Component, DenseVecStorage},
 };
 
 pub struct StaticBlock;

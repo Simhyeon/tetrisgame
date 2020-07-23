@@ -1,11 +1,10 @@
 use amethyst::{
 //    prelude::*,
-    core::math::Translation3,
     core::timing::Time,
     core::transform::Transform,
 //    core::SystemDesc,
     derive::SystemDesc,
-    ecs::prelude::{ReadExpect, Entity, World, System, ReadStorage, Write, Join, Read, SystemData, WriteStorage},
+    ecs::prelude::{ReadExpect, System, ReadStorage, Join, Read, SystemData, WriteStorage},
     input::{InputHandler},
 };
 
@@ -49,6 +48,11 @@ impl<'s> System<'s> for KeyInputSystem {
     );
 
     fn run(&mut self, (mut locals ,blocks, stt, handler, input, time): Self::SystemData) {
+
+        if handler.blocks.len() == 0 {
+            return;
+        }
+
         if let Some(mut timer) = self.key_interval.take(){
             timer -= time.delta_seconds();
             if timer <= 0.0 {
@@ -59,13 +63,17 @@ impl<'s> System<'s> for KeyInputSystem {
         } else {
             // run 마다 clone 한다는 건데 이건 상당히 비효율적이긴 한다. 
             for entity in handler.blocks.clone(){
-                let local_value = locals.get(entity).unwrap().translation().x;
-                if local_value == 0.0{
-                    self.noinput = NoInput::Left;
-                } else if local_value == WIDTH - 45.0 {
-                    self.noinput = NoInput::Right;
+                if let Some(transform) = locals.get(entity) {
+                    let local_value = transform.clone().translation().x;
+                    if local_value == 0.0{
+                        self.noinput = NoInput::Left;
+                    } else if local_value == WIDTH - 45.0 {
+                        self.noinput = NoInput::Right;
+                    } else {
+                        self.noinput = NoInput::None;
+                    }
                 } else {
-                    self.noinput = NoInput::None;
+                    return;
                 }
             }
             for (local, _block, ()) in ( &mut locals, &blocks ,!&stt).join(){

@@ -4,7 +4,7 @@ use amethyst::{
     core::transform::Transform,
 //    core::SystemDesc,
     derive::SystemDesc,
-    ecs::prelude::{ReadExpect, Entity, World, System, ReadStorage, Write, Join, Read, SystemData, WriteStorage},
+    ecs::prelude::{ReadExpect, System, Read, SystemData, WriteStorage},
 };
 
 use crate::component::dyn_block::{DynamicBlock, DynBlockHandler};

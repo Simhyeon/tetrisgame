@@ -1,8 +1,8 @@
 use amethyst::{
-    core::timing::Time,
+    //core::timing::Time,
     core::transform::Transform,
     assets::{AssetStorage, Loader, Handle},
-    renderer::{Camera, ImageFormat, SpriteRender, SpriteSheet, SpriteSheetFormat, Texture},
+    renderer::{Camera, ImageFormat, SpriteSheet, SpriteSheetFormat, Texture},
     prelude::*,
     ecs::World,
 };

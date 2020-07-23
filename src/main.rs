@@ -1,7 +1,7 @@
 use amethyst::{
     prelude::*,
     core::transform::TransformBundle,
-    core::frame_limiter::FrameRateLimitStrategy,
+//    core::frame_limiter::FrameRateLimitStrategy,
     utils::application_root_dir,
     renderer::{
         plugins::{RenderFlat2D, RenderToWindow},
@@ -16,17 +16,7 @@ mod system;
 mod component;
 mod config;
 
-use crate::system::{
-    gravity_system::GravitySystem,
-    keyinput_system::KeyInputSystem,
-    stack_system::StackSystem,
-    spawner_system::SpawnerSystem,
-};
-
-use crate::state::{
-    main_state::MainState,
-    loading_state::LoadingState,
-};
+use crate::state::{ loading_state::LoadingState, };
 use crate::config::MovementBindingTypes;
 
 fn main() -> amethyst::Result<()> {
@@ -60,10 +50,7 @@ fn main() -> amethyst::Result<()> {
         )?
         .with_bundle(TransformBundle::new())?
         .with_bundle(input_bundle)?;
-        //.with(KeyInputSystem::default(), "keyinput_system", &[])
-        //.with(GravitySystem::default(), "gravity_system", &[])
-        //.with(StackSystem::default(), "stack_system", &["gravity_system"])
-        //.with(SpawnerSystem::default(), "spawner_system", &["stack_system"]);
+
 
     let assets_dir = app_root.join("assets");
     let mut game = Application::new(assets_dir, LoadingState::default(), game_data)?;
