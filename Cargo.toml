@@ -8,7 +8,6 @@ edition = "2018"
 
 [dependencies]
 serde = { version = "1", features = ["derive"] }
-priority-queue = "1.0.0"
 
 [dependencies.amethyst]
 version ="0.15.0"
