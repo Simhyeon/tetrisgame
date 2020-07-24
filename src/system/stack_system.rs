@@ -34,7 +34,7 @@ impl<'s> System<'s> for StackSystem {
         for (_, local, ()) in (&dyn_blocks, &locals, !&stt_blocks).join() {
             // get 이 consume 하는 지를 확인해 보자. 
             if local.translation().y == 45.0 {
-                println!("{}", local.translation().y);
+                //println!("{}", local.translation().y);
                 //stack = true;
                 for entity in handler.blocks.clone() {
                     stt_blocks.insert(entity, StaticBlock).expect("ERR");

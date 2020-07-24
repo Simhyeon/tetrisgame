@@ -68,14 +68,14 @@ impl<'s> System<'s> for CollapseSystem {
                     if prior.partial_cmp(&vector[counter].height).unwrap() != Ordering::Equal {
                         // Update index
                         prior = vector[counter].height;
-                        println!("Found new transform : {}", prior);
+                        //println!("Found new transform : {}", prior);
 
                         // Find all occurence
                         let new_vec: Vec<&Container> = vector.iter().filter(|&x| x.height == prior).collect();
 
                         // If line is full delte all entities
                         if new_vec.len() == 10 { // Hard coded for now TODO SHould be soft coded
-                            println!("Found full line");
+                            println!("Full line collapsing");
                             for item in new_vec {
                                 entities.delete(item.id).expect("ERR");
                             }
