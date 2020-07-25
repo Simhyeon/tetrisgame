@@ -75,7 +75,7 @@ impl<'s> System<'s> for CollapseSystem {
 
                         // If line is full delte all entities
                         if new_vec.len() == 10 { // Hard coded for now TODO SHould be soft coded
-                            println!("Full line collapsing");
+                            println!("Full line collapsing which is {}", prior);
                             for item in new_vec {
                                 entities.delete(item.id).expect("ERR");
                             }
