@@ -14,6 +14,7 @@ use crate::config::{MovementBindingTypes, AxisBinding, ActionBinding};
 use std::f64::consts::PI;
 
 const INPUTINTERVAL: f32 = 0.05;
+const EPSILON: f32 = 0.0001;
 
 #[derive(SystemDesc)]
 pub struct KeyInputSystem {
@@ -63,34 +64,29 @@ impl<'s> System<'s> for KeyInputSystem {
                 self.key_interval.replace(timer);
             }
         } else {
+            self.noinput = NoInput::None;
             for entity in &handler.blocks {
                 if let Some(transform) = locals.get(*entity) {
                     let local_value = transform.global_matrix().clone();
-                    if local_value.m14 == 0.0{
-                        self.noinput = NoInput::Left;
-                    } else if local_value.m14 == WIDTH - 45.0 {
-                        self.noinput = NoInput::Right;
-                    } else {
-                        self.noinput = NoInput::None;
+                    if KeyInputSystem::similar(local_value.m14, 0.0){
+                        self.append_no_input(NoInput::Left);
+                    } else if KeyInputSystem::similar(local_value.m14, WIDTH - 45.0 ){
+                        self.append_no_input(NoInput::Right);
                     }
 
-
                     for (local, _block, _) in ( &mut locals, &blocks ,&stt).join(){
-                        if local.global_matrix().m14 == local_value.m14 + 45.0 
-                            && local.global_matrix().m24 == local_value.m24 {
-                            if let NoInput::Left = self.noinput {
-                                self.noinput = NoInput::Both
-                            } else {
-                                self.noinput = NoInput::Right;
-                            }
-                        } else if local.global_matrix().m14 == local_value.m14 - 45.0 
-                            && local.global_matrix().m24 == local_value.m24 {
-                            if let NoInput::Right = self.noinput {
-                                self.noinput = NoInput::Both
-                            } else {
-                                self.noinput = NoInput::Left;
-                            }
+                        if KeyInputSystem::similar(local.global_matrix().m14, local_value.m14 + 45.0 )
+                            && KeyInputSystem::similar(local.global_matrix().m24, local_value.m24) {
+                            self.append_no_input(NoInput::Right);
+                        } else if KeyInputSystem::similar(local.global_matrix().m14 , local_value.m14 - 45.0) 
+                            && KeyInputSystem::similar(local.global_matrix().m24 , local_value.m24 ){
+                            self.append_no_input(NoInput::Left);
                         }
+                    }
+
+                    match self.noinput {
+                        NoInput::None => (),
+                        _ => break,
                     }
 
                 } else {
@@ -125,7 +121,13 @@ impl<'s> System<'s> for KeyInputSystem {
             }
 
             let shoot = input.action_is_down(&ActionBinding::Shoot).unwrap_or(false);
+            let rotate_right = input.action_is_down(&ActionBinding::RotateRight).unwrap_or(false);
             if shoot {
+                for (local, _block, ()) in ( &mut locals, &blocks ,!&stt).join(){
+                    println!("{}", local.global_matrix());
+                }
+            }
+            if rotate_right {
                 //println!("Rotating");
                 //locals.get_mut(handler.parent.unwrap()).unwrap().set_rotation_z_axis((PI * 0.5) as f32);
                 locals.get_mut(handler.parent.unwrap()).unwrap().append_rotation_z_axis((PI * 0.5) as f32);
@@ -138,5 +140,37 @@ impl<'s> System<'s> for KeyInputSystem {
             self.key_interval.replace(INPUTINTERVAL);
         }
 
+    }
+}
+
+impl KeyInputSystem {
+    fn similar(value1: f32, value2: f32) -> bool{
+        if (value1 - value2).abs() <= EPSILON {
+            true
+        } else {
+            false
+        }
+    }
+
+    fn append_no_input(&mut self, no_input: NoInput) {
+        match self.noinput {
+            NoInput::Left => {
+                if let NoInput::Right = no_input {
+                    self.noinput = NoInput::Both;
+                }
+            },
+
+            NoInput::Right => {
+                if let NoInput::Left = no_input {
+                    self.noinput = NoInput::Both;
+                }
+            },
+
+            NoInput::None => {
+                self.noinput = no_input;
+            },
+
+            _ => (),
+        }
     }
 }

@@ -13,6 +13,7 @@ pub enum AxisBinding {
 #[derive(Clone, Debug, Hash, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ActionBinding {
     Shoot,
+    RotateRight,
 }
 impl Display for AxisBinding {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
