@@ -25,7 +25,7 @@ impl SimpleState for LoadingState{
         world.insert(sprite_sheet_store);
 
         initialize_camera(world);
-        world.insert(DynBlockHandler{blocks: vec![]});
+        world.insert(DynBlockHandler::default());
     }
 
     fn update(&mut self, _data: &mut StateData<'_, GameData<'_, '_>>) ->SimpleTrans{

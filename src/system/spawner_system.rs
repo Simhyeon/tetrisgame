@@ -1,6 +1,6 @@
 use amethyst::{
     assets::Handle,
-    core::transform::Transform,
+    core::transform::{Transform, Parent},
     derive::SystemDesc,
     ecs::prelude::{Read, System, SystemData, WriteExpect, LazyUpdate, ReadExpect, Entities},
     renderer::{SpriteRender, SpriteSheet},
@@ -32,8 +32,13 @@ impl<'s> System<'s> for SpawnerSystem{
             let mut block_transforms = vec![Transform::default(); 4];
             let mut yoffset = 0.0; // which is the size of block
 
+            //for item in &mut block_transforms {
+                //item.set_translation_xyz(WIDTH - 45.0 * 5.0, HEIGHT - yoffset, 0.0);
+                //yoffset += 45.0;
+            //}
+
             for item in &mut block_transforms {
-                item.set_translation_xyz(WIDTH - 45.0 * 5.0, HEIGHT - yoffset, 0.0);
+                item.set_translation_xyz(0.0, 0.0 - yoffset, 0.0);
                 yoffset += 45.0;
             }
 
@@ -42,6 +47,18 @@ impl<'s> System<'s> for SpawnerSystem{
                 sprite_sheet: sprite_sheet_handle.clone(),
                 sprite_number: 0,
             };
+
+            // Set Parent
+            let parent = entities.create();
+            let mut parent_pos = Transform::default();
+            parent_pos.set_translation_xyz(0.0 + 45.0 * 2.0, HEIGHT - 45.0, 0.0);
+
+            updater.insert(
+                parent,
+                parent_pos,
+            );
+
+            handler.parent = Some(parent);
 
             for item in block_transforms {
                 let new_block = entities.create();
@@ -60,8 +77,15 @@ impl<'s> System<'s> for SpawnerSystem{
                     new_block,
                     sprite_render.clone(),
                 );
+
+                updater.insert(
+                    new_block,
+                    Parent::new(parent),
+                );
+
                 handler.blocks.push(new_block);
             }
+            println!("{}", handler.blocks.len());
         }
     }
 
