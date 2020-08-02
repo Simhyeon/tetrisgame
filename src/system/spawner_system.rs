@@ -9,7 +9,7 @@ use amethyst::{
 
 pub const WIDTH: f32 = 450.0;
 pub const HEIGHT: f32 = 900.0;
-use crate::component::dyn_block::{DynBlockHandler, DynamicBlock};
+use crate::component::dyn_block::{DynBlockHandler, DynamicBlock, Rotation};
 
 #[derive(SystemDesc, Default)]
 pub struct SpawnerSystem;
@@ -59,6 +59,7 @@ impl<'s> System<'s> for SpawnerSystem{
             );
 
             handler.parent = Some(parent);
+            handler.rotation = Rotation::Down;
 
             for item in block_transforms {
                 let new_block = entities.create();

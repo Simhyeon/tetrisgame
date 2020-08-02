@@ -1,0 +1,21 @@
+-------------------------
+Printing local transforms
+X : 405, Y : 180
+X : 405, Y : 135
+X : 405, Y : 90
+X : 405, Y : 45
+X : 405, Y : 360
+X : 405, Y : 315
+X : 405, Y : 270
+X : 405, Y : 225
+X : 225, Y : 45
+X : 270, Y : 45
+X : 315, Y : 45
+X : 359.99997, Y : 45
+Printing handler's blocks transforms
+X : 360, Y : 405
+X : 360, Y : 360
+X : 360, Y : 315
+X : 360, Y : 270
+X, Y value to Move is 0, -1
+-------------------------

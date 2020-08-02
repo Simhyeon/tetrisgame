@@ -33,13 +33,13 @@ impl<'s> System<'s> for StackSystem {
 
         let mut to_be_stacked = false;
         for (dyn_local, _, ()) in (&locals, &dyn_blocks, !&stt_blocks).join() {
-            if dyn_local.global_matrix().m24 == 45.0 {
+            if dyn_local.global_matrix().m24.round() == 45.0 {
                 to_be_stacked = true;
                 break;
             }
             for (local, _) in (&locals, &stt_blocks).join() {
-                if local.global_matrix().m24 == dyn_local.global_matrix().m24 - 45.0 
-                    && local.global_matrix().m14 == dyn_local.global_matrix().m14 {
+                if local.global_matrix().m24.round() == dyn_local.global_matrix().m24.round() - 45.0 
+                    && local.global_matrix().m14.round() == dyn_local.global_matrix().m14.round() {
                     to_be_stacked = true;
                     break;
                 }
