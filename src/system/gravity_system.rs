@@ -29,12 +29,7 @@ impl<'s> System<'s> for GravitySystem{
         if self.time_delay >= MOVEDELAY {
             //println!("Delay : {}", self.time_delay);
             self.time_delay = 0.0;
-            for entity in handler.blocks.clone(){
-                locals.get_mut(entity).unwrap().prepend_translation_y(-45.0);
-            }
-            //for (_block, local) in (&blocks, &mut locals).join(){
-                //local.prepend_translation_y(-45.0); // Hard Coded for now
-            //}
+            locals.get_mut(handler.parent.unwrap()).unwrap().prepend_translation_y(-45.0);
         }
     }
 }
