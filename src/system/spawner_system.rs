@@ -9,7 +9,9 @@ use amethyst::{
 
 pub const WIDTH: f32 = 450.0;
 pub const HEIGHT: f32 = 900.0;
+pub const BLOCKINDEX: usize = 0;
 use crate::component::dyn_block::{DynBlockHandler, DynamicBlock, Rotation};
+use crate::config::BlocksConfig;
 
 #[derive(SystemDesc, Default)]
 pub struct SpawnerSystem;
@@ -23,22 +25,18 @@ impl<'s> System<'s> for SpawnerSystem{
         WriteExpect<'s, DynBlockHandler>,
         Read<'s, LazyUpdate>,
         ReadExpect<'s, Handle<SpriteSheet>>,
+        Read<'s, BlocksConfig>,
     );
 
-    fn run(&mut self, (entities, mut handler, updater, sprite_sheet_handle): Self::SystemData){
+    fn run(&mut self, (entities, mut handler, updater, sprite_sheet_handle, block_config): Self::SystemData){
         if handler.blocks.len() == 0 {
             println!("SPawning");
             // Transform setup
             let mut block_transforms = vec![Transform::default(); 4];
-            let mut yoffset = 0.0; // which is the size of block
-
-            //for item in &mut block_transforms {
-                //item.set_translation_xyz(WIDTH - 45.0 * 5.0, HEIGHT - yoffset, 0.0);
-                //yoffset += 45.0;
-            //}
+            let mut yoffset = -90.0; // which is the size of block
 
             for item in &mut block_transforms {
-                item.set_translation_xyz(0.0, 0.0 - yoffset, 0.0);
+                item.set_translation_xyz(0.0, 0.0 + yoffset, 0.0);
                 yoffset += 45.0;
             }
 
@@ -51,7 +49,11 @@ impl<'s> System<'s> for SpawnerSystem{
             // Set Parent
             let parent = entities.create();
             let mut parent_pos = Transform::default();
-            parent_pos.set_translation_xyz(0.0 + 45.0 * 2.0, HEIGHT - 45.0, 0.0);
+            //println!("Block Config blocks LENGTH is : {}", block_config.blocks.len());
+            let origin_index = block_config.blocks[BLOCKINDEX].origin;
+            println!("Origin index is {}", origin_index);
+            parent_pos = block_transforms[origin_index as usize].clone();
+            parent_pos.append_translation_xyz(WIDTH - 45.0 * 5.0, HEIGHT - 45.0 * 2.0, 0.0);
 
             updater.insert(
                 parent,

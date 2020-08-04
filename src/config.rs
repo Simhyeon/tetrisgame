@@ -15,6 +15,39 @@ pub enum ActionBinding {
     Shoot,
     RotateRight,
 }
+
+#[derive(Clone, Default, Debug, Deserialize, Serialize)]
+pub struct BlocksConfig {
+    pub blocks: Vec<Block>,
+}
+
+impl BlocksConfig {
+    pub fn new() -> Self {
+        Self { 
+            blocks: vec![Block::default()],
+        }
+    }
+}
+
+#[derive(Clone, Default,Debug, Deserialize, Serialize)]
+pub struct Block {
+    pub origin: u32,
+    pub offset : Offset,
+}
+
+#[derive(Clone, Default,Debug, Deserialize, Serialize)]
+pub struct Offset {
+    pub right_rotate: (i32, i32),
+    pub left_rotate: (i32, i32),
+}
+
+//origin: 2,
+//offset: (
+    //right_rotate: (-2, 1)
+    //left_rotate: (-1, 2)
+//),
+
+
 impl Display for AxisBinding {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{:?}", self)

@@ -12,6 +12,8 @@ use crate::system::{
     collapse_system::CollapseSystem,
 };
 
+use crate::config::BlocksConfig;
+
 #[derive(Default)]
 pub struct MainState<'a, 'b>{
     dispatcher: Option<Dispatcher<'a, 'b>>,
@@ -22,7 +24,7 @@ impl<'a, 'b> SimpleState for MainState<'a, 'b>{
         let world = &mut data.world;
 
         let mut dispatcher_builder = DispatcherBuilder::new();
-        dispatcher_builder.add(GravitySystem::default(), "gravity_system", &[]);
+        //dispatcher_builder.add(GravitySystem::default(), "gravity_system", &[]);
         //dispatcher_builder.add(StackSystem::default(), "stack_system", &["gravity_system"]);
         dispatcher_builder.add(StackSystem::default(), "stack_system", &[]);
         dispatcher_builder.add(SpawnerSystem::default(), "spawner_system", &["stack_system"]);

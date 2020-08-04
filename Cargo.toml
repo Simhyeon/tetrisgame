@@ -8,6 +8,7 @@ edition = "2018"
 
 [dependencies]
 serde = { version = "1", features = ["derive"] }
+ron = "0.6.0"
 
 [dependencies.amethyst]
 version ="0.15.0"

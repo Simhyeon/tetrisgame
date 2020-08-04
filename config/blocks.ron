@@ -1,0 +1,11 @@
+(
+	blocks: [
+	(
+		origin: 2,
+		offset: ( 
+			right_rotate: (-2,0),
+			left_rotate: (-1,2)
+		)
+	)
+	]
+)

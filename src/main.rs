@@ -17,7 +17,7 @@ mod component;
 mod config;
 
 use crate::state::{ loading_state::LoadingState, };
-use crate::config::MovementBindingTypes;
+use crate::config::{MovementBindingTypes, BlocksConfig};
 
 fn main() -> amethyst::Result<()> {
 
@@ -31,6 +31,9 @@ fn main() -> amethyst::Result<()> {
     let input_config = app_root.join("config").join("input.ron");
     let input_bundle = InputBundle::<MovementBindingTypes>::new()
         .with_bindings_from_file(input_config)?;
+
+    let blocks_config = app_root.join("config").join("blocks.ron");
+    let blocks_config = BlocksConfig::load(&blocks_config)?;
 
     // TODO 아직 키보드 바인딩은 필요없다. 
     //let binding_path = app_root.join("config").join("bindings.ron");
@@ -53,7 +56,9 @@ fn main() -> amethyst::Result<()> {
 
 
     let assets_dir = app_root.join("assets");
-    let mut game = Application::new(assets_dir, LoadingState::default(), game_data)?;
+    // with_resource(blocks_config).
+    let mut game = Application::build(assets_dir, LoadingState::default())?.with_resource(blocks_config).build(game_data)?;
+    //let mut game = Application::new(assets_dir, LoadingState::default(), game_data)?;
     game.run();
 
     Ok(())
