@@ -1,6 +1,8 @@
 use amethyst::{
     ecs::prelude::{Component, DenseVecStorage, Entity},
 };
+use crate::config::{Block, Offset};
+use crate::utils;
 
 pub struct DynamicBlock;
 
@@ -10,6 +12,7 @@ impl Component for DynamicBlock {
 
 pub struct DynBlockHandler {
     pub blocks: Vec<Entity>,
+    pub config: Block,
     pub parent: Option<Entity>,
     pub rotation: Rotation,
 }
@@ -18,8 +21,9 @@ impl Default for DynBlockHandler {
     fn default() -> Self {
         Self {
             blocks : vec![],
+            config : Block::default(),
             parent : None,
-            rotation : Rotation::Down,
+            rotation : Rotation::Up,
         }
     }
 }
@@ -44,22 +48,38 @@ impl DynBlockHandler {
         }
     }
 
-    pub fn get_x_y_count(&self, direction: Rotation) -> (f32, f32) {
-        println!("Getting calcaultion");
-        println!("Current rotation is : {:?}", self.rotation);
+    pub fn get_count(&self, direction: Rotation) -> (f32, f32) {
         if let Rotation::Right = direction {
+            let (start, end) = self.config.offset.right_rotate;
             match self.rotation {
-                Rotation::Up => (1.0, 0.0),
-                Rotation::Right => (0.0, -1.0),
-                Rotation::Down => (-1.0, 0.0),
-                Rotation::Left => (0.0, 1.0),
+                Rotation::Up => {
+                    (start, end)
+                }
+                Rotation::Right=> {
+                    (-end, -start)
+                }
+                Rotation::Down => {
+                    (-end, -start)
+                }
+                Rotation::Left => {
+                    (start, end)
+                }
             }
         } else if let Rotation::Left = direction {
+            let (start, end) = self.config.offset.left_rotate;
             match self.rotation {
-                Rotation::Up => (-1.0, 0.0),
-                Rotation::Right => (0.0, 1.0),
-                Rotation::Down => (1.0, 0.0),
-                Rotation::Left => (0.0, -1.0),
+                Rotation::Up => {
+                    (start, end)
+                }
+                Rotation::Right=> {
+                    (-end, -start)
+                }
+                Rotation::Down => {
+                    (-end, -start)
+                }
+                Rotation::Left => {
+                    (start, end)
+                }
             }
         } else {
             (0.0, 0.0)

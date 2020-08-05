@@ -15,6 +15,7 @@ mod state;
 mod system;
 mod component;
 mod config;
+mod utils;
 
 use crate::state::{ loading_state::LoadingState, };
 use crate::config::{MovementBindingTypes, BlocksConfig};

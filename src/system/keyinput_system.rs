@@ -140,61 +140,93 @@ impl<'s> System<'s> for KeyInputSystem {
             // Get Actio inputs
             let shoot = input.action_is_down(&ActionBinding::Shoot).unwrap_or(false);
             let rotate_right = input.action_is_down(&ActionBinding::RotateRight).unwrap_or(false);
+            let rotate_left = input.action_is_down(&ActionBinding::RotateLeft).unwrap_or(false);
+
 
             // Currently for Debugging purpose
             // Print out useful location informations
             if shoot {
-                println!("-------------------------");
-                println!("Printing local transforms");
-                for (local, _block, _) in ( &mut locals, &blocks ,&stt).join(){
-                    println!("X : {}, Y : {}", local.global_matrix().m14, local.global_matrix().m24);
-                }
+                //println!("-------------------------");
+                //println!("Printing local transforms");
+                //for (local, _block, _) in ( &mut locals, &blocks ,&stt).join(){
+                    //println!("X : {}, Y : {}", local.global_matrix().m14, local.global_matrix().m24);
+                //}
 
-                println!("Printing handler's blocks transforms");
-                for entity in &handler.blocks {
-                    println!("X : {}, Y : {}", locals.get(*entity).unwrap().global_matrix().m14, locals.get(*entity).unwrap().global_matrix().m24);
-                }
-                let (x, y) = handler.get_x_y_count(Rotation::Right);
-                println!("X, Y value to Move is {}, {}", x, y);
-                println!("-------------------------");
+                //println!("Printing handler's blocks transforms");
+                //for entity in &handler.blocks {
+                    //println!("X : {}, Y : {}", locals.get(*entity).unwrap().global_matrix().m14, locals.get(*entity).unwrap().global_matrix().m24);
+                //}
+                //let (x, y) = handler.get_x_y_count(Rotation::Right);
+                //println!("X, Y value to Move is {}, {}", x, y);
+                //println!("-------------------------");
             }
 
             // If right rotate button was given
-            if rotate_right {
+            if rotate_right || rotate_left {
+
+                println!("Rotate Right is {} ---- Rotate Left is {}", rotate_right, rotate_left);
+
+                let mut block_rotate = false;
+                let start: f32;
+                let end: f32;
+                if rotate_right {
+                    let (s, e) = handler.get_count(Rotation::Right);
+                    start = s;
+                    end = e;
+                } else { // if rotate left
+                    let (s, e) = handler.get_count(Rotation::Left);
+                    start = s;
+                    end = e;
+                }
 
                 // Check Rotation validation prevent roation when not possible by meaning
-                let rotate_offset = 3;
-                let mut block_rotate = false;
-                let (x, y) = handler.get_x_y_count(Rotation::Right);
+                // Get offset
+                let x: f32;
+                let y: f32;
 
-                'outer: for entity in &handler.blocks{
-                    let local_entity = locals.get(*entity).unwrap().global_matrix().clone();
+                match handler.rotation {
+                    Rotation::Up | Rotation::Down => {
+                        x = 1.0;
+                        y = 0.0;
+                    }
+                    Rotation::Right | Rotation::Left => {
+                        x = 0.0;
+                        y = 1.0;
+                    }
+                }
 
-                    for count in 1..rotate_offset+1 {
+                // Loop through transforms
+                let parent = locals.get(handler.parent.unwrap()).unwrap().global_matrix().clone();
+                for count in start as i32 .. end as i32 + 1 {
+                    for (local, _block, _) in ( &mut locals, &blocks ,&stt).join(){
+                        if parent.m14.round() + count as f32 * x * 45.0 == local.global_matrix().m14.round() 
+                            && parent.m24.round() + count as f32 * y * 45.0 == local.global_matrix().m24.round(){
+                                block_rotate = true;
+                                break;
+                        } 
+                    }
 
-                        for (local, _block, _) in ( &mut locals, &blocks ,&stt).join(){
-                            if local_entity.m14.round() + count as f32 * x * 45.0 == local.global_matrix().m14.round() 
-                                && local_entity.m24.round() + count as f32 * y * 45.0 == local.global_matrix().m24.round(){
-                                    block_rotate = true;
-                                    break 'outer;
-                                } 
-                        }
-
-                        if local_entity.m14.round() + count as f32 * x * 45.0 == -45.0 
-                            || local_entity.m14.round() + count as f32 * x * 45.0 == WIDTH 
-                                || local_entity.m24.round() + count as f32 * y * 45.0 == -45.0
-                                || local_entity.m24.round() + count as f32 * y * 45.0 == HEIGHT + 45.0 {
-                                    block_rotate = true;
-                                    break 'outer;
-                        }
+                    if parent.m14.round() + count as f32 * x * 45.0 == -45.0 
+                        || parent.m14.round() + count as f32 * x * 45.0 == WIDTH 
+                            || parent.m24.round() + count as f32 * y * 45.0 == 0.0
+                            || parent.m24.round() + count as f32 * y * 45.0 == HEIGHT + 45.0 {
+                                block_rotate = true;
+                                break;
                     }
                 }
 
                 //Rotate parent if not prevented from prior logics
-                println!("Rotating");
                 if !block_rotate {
-                    locals.get_mut(handler.parent.unwrap()).unwrap().prepend_rotation_z_axis((PI * 0.5) as f32);
-                    handler.rotate_handler(Rotation::Right);
+                    println!("--Executing Rotation--");
+                    if rotate_right {
+                        handler.rotate_handler(Rotation::Right);
+                        locals.get_mut(handler.parent.unwrap()).unwrap().prepend_rotation_z_axis((PI * 0.5) as f32);
+                    } else {
+                        handler.rotate_handler(Rotation::Left);
+                        locals.get_mut(handler.parent.unwrap()).unwrap().prepend_rotation_z_axis(-(PI * 0.5) as f32);
+                    }
+                } else {
+                    println!("--Blocked Rotation--");
                 }
             }
 

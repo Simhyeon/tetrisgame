@@ -6,5 +6,6 @@
 	actions: {
 		Shoot: [[Key(Space)]],
 		RotateRight: [[Key(D)]],
+		RotateLeft: [[Key(A)]],
 	},
 )

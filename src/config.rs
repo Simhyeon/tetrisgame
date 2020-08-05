@@ -14,6 +14,7 @@ pub enum AxisBinding {
 pub enum ActionBinding {
     Shoot,
     RotateRight,
+    RotateLeft,
 }
 
 #[derive(Clone, Default, Debug, Deserialize, Serialize)]
@@ -37,8 +38,8 @@ pub struct Block {
 
 #[derive(Clone, Default,Debug, Deserialize, Serialize)]
 pub struct Offset {
-    pub right_rotate: (i32, i32),
-    pub left_rotate: (i32, i32),
+    pub right_rotate: (f32, f32),
+    pub left_rotate: (f32, f32),
 }
 
 //origin: 2,

@@ -62,6 +62,7 @@ impl<'s> System<'s> for SpawnerSystem{
 
             handler.parent = Some(parent);
             handler.rotation = Rotation::Down;
+            handler.config = block_config.blocks[BLOCKINDEX].clone();
 
             for item in block_transforms {
                 let new_block = entities.create();
