@@ -9,7 +9,7 @@ use amethyst::{
 
 pub const WIDTH: f32 = 450.0;
 pub const HEIGHT: f32 = 900.0;
-pub const BLOCKINDEX: usize = 0;
+
 use crate::component::dyn_block::{DynBlockHandler, DynamicBlock, Rotation};
 use crate::config::BlocksConfig;
 
@@ -31,39 +31,58 @@ impl<'s> System<'s> for SpawnerSystem{
     fn run(&mut self, (entities, mut handler, updater, sprite_sheet_handle, block_config): Self::SystemData){
         if handler.blocks.len() == 0 {
             println!("SPawning");
+
+            // Get Config
+            let block_index = 0; // This is hardcoded but should be randomly generated for random distributed block spawning
+            let local_config = &block_config.blocks[block_index];
+
             // Transform setup
             let mut block_transforms = vec![Transform::default(); 4];
-            let mut yoffset = -90.0; // which is the size of block
 
-            for item in &mut block_transforms {
-                item.set_translation_xyz(0.0, 0.0 + yoffset, 0.0);
-                yoffset += 45.0;
+            // Backup Codes  SHould Delete after other translation succeeds
+            //let mut yoffset = -90.0; // which is the size of block
+
+            //for item in &mut block_transforms {
+                //item.set_translation_xyz(0.0, 0.0 + yoffset, 0.0);
+                //yoffset += 45.0;
+            //}
+
+            println!("Local transforms");
+            // Set children's transform according to given offsets of local_config
+            for (index, (x_offset, y_offset)) in local_config.locations.iter().enumerate() {
+                block_transforms[index].set_translation_xyz(0.0 + x_offset, 0.0 + y_offset, 0.0);
+                println!("{}", block_transforms[index].translation());
             }
 
             // SpriteSheet setup
+            // Geter First sprite from spritesheet
             let sprite_render = SpriteRender {
                 sprite_sheet: sprite_sheet_handle.clone(),
                 sprite_number: 0,
             };
 
-            // Set Parent
+            // Set Parent with origin index which is read from local_config
             let parent = entities.create();
             let mut parent_pos = Transform::default();
-            //println!("Block Config blocks LENGTH is : {}", block_config.blocks.len());
-            let origin_index = block_config.blocks[BLOCKINDEX].origin;
-            println!("Origin index is {}", origin_index);
+            let origin_index = local_config.origin;
+
+            // Set parent transform to that of origin transform's. 
             parent_pos = block_transforms[origin_index as usize].clone();
+            println!("{}", parent_pos.translation());
             parent_pos.append_translation_xyz(WIDTH - 45.0 * 5.0, HEIGHT - 45.0 * 2.0, 0.0);
 
+            // Update entity with new transform component
             updater.insert(
                 parent,
                 parent_pos,
             );
 
+            // Set required informations to dynamic block handlers
             handler.parent = Some(parent);
             handler.rotation = Rotation::Down;
-            handler.config = block_config.blocks[BLOCKINDEX].clone();
+            handler.config = local_config.clone();
 
+            // Spawn child blocks and attach to parent transform
             for item in block_transforms {
                 let new_block = entities.create();
                 // Transform
@@ -89,7 +108,7 @@ impl<'s> System<'s> for SpawnerSystem{
 
                 handler.blocks.push(new_block);
             }
-            println!("{}", handler.blocks.len());
+            //println!("{}", handler.blocks.len());
         }
     }
 

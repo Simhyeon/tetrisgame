@@ -1,15 +1,20 @@
+// Format description
+// blocks is array
+// locations is array of x and y's offset respectively
+// Location offset should be the offset from origin. 
+// For example if origin is 2 then third value of locations should be (0.0, 0.0) 
+// and other value should be the offset from that origin.
+// Origin is rotation origin 
+// While offset means rotation offset
 (
 	blocks: [
 	(
-		// 여기에 이제 어떻게 블록들을 할당해야 하는가의 정보가 담겨야 한다. 
-		// 간단하게는 0,0 으로부터 시작해서 
-		// x, y로 얼마나 이동해야 하는 가를 정의한다. 
-		// locations : [ 
-		//  (f32, f32),
-		//  (f32, f32),
-		//  (f32, f32),
-		//  (f32, f32),
-		// ]
+		 locations : [ 
+		  (0.0, 90.0	),
+		  (0.0, 45.0	),
+		  (0.0, 0.0		),
+		  (0.0, -45.0	),
+		 ],
 		origin: 2,
 		offset: ( 
 			right_rotate: (-1,2),

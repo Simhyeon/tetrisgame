@@ -164,8 +164,6 @@ impl<'s> System<'s> for KeyInputSystem {
             // If right rotate button was given
             if rotate_right || rotate_left {
 
-                println!("Rotate Right is {} ---- Rotate Left is {}", rotate_right, rotate_left);
-
                 let mut block_rotate = false;
                 let start: f32;
                 let end: f32;
