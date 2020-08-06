@@ -53,7 +53,7 @@ impl<'s> System<'s> for CollapseSystem {
 
                 let mut vector: Vec<Container> = Vec::new();
                 for (entity ,local, _) in (&entities, &locals, &stt_blocks).join() {
-                    vector.push(Container::new(local.translation().y, entity));
+                    vector.push(Container::new(local.global_matrix().m24.round(), entity));
                 }
 
                 // Debug Code
