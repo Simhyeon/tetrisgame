@@ -61,7 +61,7 @@ impl<'s> System<'s> for SpawnerSystem{
             // Geter First sprite from spritesheet
             let sprite_render = SpriteRender {
                 sprite_sheet: sprite_sheet_handle.clone(),
-                sprite_number: 0,
+                sprite_number: block_index,
             };
 
             // Set Parent with origin index which is read from local_config

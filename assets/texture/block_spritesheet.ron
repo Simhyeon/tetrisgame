@@ -1,9 +1,45 @@
 List((
-	texture_width: 45,
+	texture_width: 315,
 	texture_height: 45,
 	sprites: [
 		(
 		 	x: 0,
+			y: 0,
+			width: 45,
+			height: 45,
+		),
+		(
+		 	x: 45,
+			y: 0,
+			width: 45,
+			height: 45,
+		),
+		(
+		 	x: 90,
+			y: 0,
+			width: 45,
+			height: 45,
+		),
+		(
+		 	x: 135,
+			y: 0,
+			width: 45,
+			height: 45,
+		),
+		(
+		 	x: 180,
+			y: 0,
+			width: 45,
+			height: 45,
+		),
+		(
+		 	x: 225,
+			y: 0,
+			width: 45,
+			height: 45,
+		),
+		(
+		 	x: 270,
 			y: 0,
 			width: 45,
 			height: 45,

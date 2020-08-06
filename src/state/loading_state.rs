@@ -55,7 +55,7 @@ fn load_sprite_sheet(world : &mut World) -> Handle<SpriteSheet>{
         let loader = world.read_resource::<Loader>();
         let texture_storage = world.read_resource::<AssetStorage<Texture>>();
         loader.load(
-            "texture/block.png",
+            "texture/blocks.png",
             ImageFormat::default(),
             (),
             &texture_storage,
