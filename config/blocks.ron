@@ -6,9 +6,11 @@
 // and other value should be the offset from that origin.
 // Origin is rotation origin and origin starts from 0
 // While offset means rotation offset
+// Block's Default position should be 'UP' which means upward and not horizontally set.
+
 // TODO Currently  rotation offset other than long stick and square is not modified from default value
 (
-	// Long Stick Block
+	// Long Stick Block [0]
 	// ---
 	// | |
 	// ---
@@ -30,9 +32,10 @@
 		offset: ( 
 			right_rotate: (-1,2),
 			left_rotate: (-2,1)
-		)
+		),
+		sub_offset: None,
 	),
-	// Square Block
+	// Square Block [1]
 	// ------
 	// | || |
 	// ---o--
@@ -49,30 +52,32 @@
 		offset: ( 
 			right_rotate: (0,1),
 			left_rotate: (-1,0)
-		)
+		),
+		sub_offset: None,
 	),
-	// Mountain Block
+	// Mountain Block [2]
 	// ---
 	// | |
-	// ---o--
-	// | ||O|
+	// o-----
+	// |O|| |
 	// ------
 	// | |
 	// ---
 	(
 		 locations : [ 
-		  (-45.0, -45.0	),
-		  (-45.0, 0.0	),
+		  (0.0, 45.0	),
 		  (0.0, 0.0	),
-		  (-45.0, 45.0		),
+		  (45.0, 0.0	),
+		  (0.0, -45.0		),
 		 ],
-		origin: 2,
+		origin: 1,
 		offset: ( 
-			right_rotate: (0,1),
-			left_rotate: (-1,0)
-		)
+			right_rotate: (-1,1),
+			left_rotate: (-1,1)
+		),
+		sub_offset: None,
 	),
-	// Light cane Block
+	// Light cane Block [3]
 	// ---
 	// | |
 	// ---
@@ -82,18 +87,24 @@
 	// ------
 	(
 		 locations : [ 
-		  (0.0, -95.0	),
-		  (0.0, -45.0	),
+		  (0.0, 90.0),
+		  (0.0, 45.0),
 		  (0.0, 0.0	),
-		  (45.0, 0.0		),
+		  (45.0, 0.0),
 		 ],
 		origin: 2,
 		offset: ( 
-			right_rotate: (0,1),
-			left_rotate: (-1,0)
-		)
+			right_rotate: (0,2),
+			left_rotate: (-2,0)
+		),
+		sub_offset: Some(
+			(
+				right_rotate: (-1,0),
+				left_rotate: (0,1)
+			)
+		),
 	),
-	// Left cane Block
+	// Left cane Block [4]
 	//    ---
 	//    | |
 	//    ---
@@ -103,8 +114,8 @@
 	// ------
 	(
 		 locations : [ 
-		  (0.0, -95.0	),
-		  (0.0, -45.0	),
+		  (0.0, 90.0	),
+		  (0.0, 45.0	),
 		  (0.0, 0.0	),
 		  (-45.0, 0.0		),
 		 ],
@@ -112,9 +123,15 @@
 		offset: ( 
 			right_rotate: (0,1),
 			left_rotate: (-1,0)
-		)
+		),
+		sub_offset: Some(
+			(
+				right_rotate: (0,1),
+				left_rotate: (-1,0)
+			)
+		),
 	),
-	// Right zigzag Block
+	// Right zigzag Block [5]
 	//    ---
 	//    | |
 	// ---o--
@@ -124,18 +141,19 @@
 	// ---
 	(
 		 locations : [ 
-		  (0.0, -45.0	),
+		  (0.0, 45.0	),
 		  (0.0, 0.0	),
 		  (-45.0, 0.0	),
 		  (-45.0, -45.0		),
 		 ],
 		origin: 1,
 		offset: ( 
-			right_rotate: (0,1),
-			left_rotate: (-1,0)
-		)
+			right_rotate: (-1,1),
+			left_rotate: (-1,1)
+		),
+		sub_offset: None,
 	),
-	// Left zigzag Block
+	// Left zigzag Block [6]
 	// ---
 	// | |
 	// o-----
@@ -145,16 +163,17 @@
 	//    ---
 	(
 		 locations : [ 
-		  (0.0, -45.0	),
+		  (0.0, 45.0	),
 		  (0.0, 0.0	),
 		  (45.0, 0.0	),
 		  (45.0, -45.0		),
 		 ],
 		origin: 1,
 		offset: ( 
-			right_rotate: (0,1),
-			left_rotate: (-1,0)
-		)
+			right_rotate: (-1,1),
+			left_rotate: (-1,1)
+		),
+		sub_offset: None,
 	),
 	]
 )

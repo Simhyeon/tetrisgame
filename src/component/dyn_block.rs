@@ -85,6 +85,51 @@ impl DynBlockHandler {
             (0.0, 0.0)
         }
     }
+
+    // This is hard code as fuck so check this code asaf when rotation with suboffset problem
+    // happens
+    pub fn get_sub_count(&self, direction: Rotation) -> (f32, f32) {
+
+        if let None = self.config.sub_offset {
+            return (0.0,0.0)
+        }
+
+        if let Rotation::Right = direction {
+            let (start, end) = self.config.sub_offset.unwrap().right_rotate;
+            match self.rotation {
+                Rotation::Up=> {
+                    (start, end)
+                }
+                Rotation::Down => {
+                    (start, end)
+                }
+                Rotation::Right => {
+                    (start, end)
+                }
+                Rotation::Left => {
+                    (-end, -start)
+                }
+            }
+        } else if let Rotation::Left = direction {
+            let (start, end) = self.config.sub_offset.unwrap().left_rotate;
+            match self.rotation {
+                Rotation::Up => {
+                    (start, end)
+                }
+                Rotation::Right => {
+                    (start, end)
+                }
+                Rotation::Left=> {
+                    (-end, -start)
+                }
+                Rotation::Down => {
+                    (-end, -start)
+                }
+            }
+        } else {
+            (0.0, 0.0)
+        }
+    }
 }
 
 #[derive(Debug)]

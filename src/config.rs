@@ -35,9 +35,10 @@ pub struct Block {
     pub locations: Vec<(f32, f32)>,
     pub origin: u32,
     pub offset : Offset,
+    pub sub_offset : Option<Offset>
 }
 
-#[derive(Clone, Default,Debug, Deserialize, Serialize)]
+#[derive(Clone, Default,Debug, Deserialize, Serialize, Copy)]
 pub struct Offset {
     pub right_rotate: (f32, f32),
     pub left_rotate: (f32, f32),

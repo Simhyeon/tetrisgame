@@ -153,9 +153,11 @@ impl<'s> System<'s> for KeyInputSystem {
                 //}
 
                 //println!("Printing handler's blocks transforms");
-                //for entity in &handler.blocks {
-                    //println!("X : {}, Y : {}", locals.get(*entity).unwrap().global_matrix().m14, locals.get(*entity).unwrap().global_matrix().m24);
-                //}
+                println!("Printing DEBUGGING Informations ...");
+                println!("Current rotation is :{:?}", handler.rotation);
+                for entity in &handler.blocks {
+                    println!("X : {}, Y : {}", locals.get(*entity).unwrap().global_matrix().m14, locals.get(*entity).unwrap().global_matrix().m24);
+                }
                 //let (x, y) = handler.get_x_y_count(Rotation::Right);
                 //println!("X, Y value to Move is {}, {}", x, y);
                 //println!("-------------------------");
@@ -167,6 +169,7 @@ impl<'s> System<'s> for KeyInputSystem {
                 let mut block_rotate = false;
                 let start: f32;
                 let end: f32;
+
                 if rotate_right {
                     let (s, e) = handler.get_count(Rotation::Right);
                     start = s;
@@ -176,6 +179,8 @@ impl<'s> System<'s> for KeyInputSystem {
                     start = s;
                     end = e;
                 }
+
+                println!("Start is : {}, End is {}", start, end);
 
                 // Check Rotation validation prevent roation when not possible by meaning
                 // Get offset
@@ -210,6 +215,60 @@ impl<'s> System<'s> for KeyInputSystem {
                             || parent.m24.round() + count as f32 * y * 45.0 == HEIGHT + 45.0 {
                                 block_rotate = true;
                                 break;
+                    }
+                }
+
+                if let Some(_) = handler.config.sub_offset {
+                    println!("Checking sub offsets");
+
+                    // Reuse variables names because the variables are not gonna used again.
+                    let start: f32;
+                    let end: f32;
+
+                    if rotate_right {
+                        let (s, e) = handler.get_sub_count(Rotation::Right);
+                        start = s;
+                        end = e;
+                    } else { // if rotate left
+                        let (s, e) = handler.get_sub_count(Rotation::Left);
+                        start = s;
+                        end = e;
+                    }
+                    println!("With Start : {}, End : {}", start, end);
+                    let x: f32;
+                    let y: f32;
+
+                    // This is exactly reverser that of normal counting
+                    match handler.rotation {
+                        Rotation::Up | Rotation::Down => {
+                            x = 0.0;
+                            y = 1.0;
+                        }
+                        Rotation::Right | Rotation::Left => {
+                            x = 1.0;
+                            y = 0.0;
+                        }
+                    }
+
+                    // Loop through transforms
+                    let parent = locals.get(handler.parent.unwrap()).unwrap().global_matrix().clone();
+                    for count in start as i32 .. end as i32 + 1 {
+                        for (local, _block, _) in ( &mut locals, &blocks ,&stt).join(){
+                            if parent.m14.round() + count as f32 * x * 45.0 == local.global_matrix().m14.round() 
+                                && parent.m24.round() + count as f32 * y * 45.0 == local.global_matrix().m24.round(){
+                                    block_rotate = true;
+                                    break;
+                            } 
+                        }
+                        println!("With ...");
+                        println!("X : {}, Y : {}", parent.m14.round() + count as f32 * x * 45.0, parent.m24.round() + count as f32 * y * 45.0);
+                        if parent.m14.round() + count as f32 * x * 45.0 == -45.0 
+                            || parent.m14.round() + count as f32 * x * 45.0 == WIDTH 
+                                || parent.m24.round() + count as f32 * y * 45.0 == 0.0
+                                || parent.m24.round() + count as f32 * y * 45.0 == HEIGHT + 45.0 {
+                                    block_rotate = true;
+                                    break;
+                        }
                     }
                 }
 

@@ -6,6 +6,7 @@ use amethyst::{
     renderer::{SpriteRender, SpriteSheet},
 
 };
+use rand::prelude::*;
 
 pub const WIDTH: f32 = 450.0;
 pub const HEIGHT: f32 = 900.0;
@@ -33,7 +34,9 @@ impl<'s> System<'s> for SpawnerSystem{
             println!("SPawning");
 
             // Get Config
-            let block_index = 0; // This is hardcoded but should be randomly generated for random distributed block spawning
+            //let block_index = 3; -> This is for directing index for block
+            let mut rng = thread_rng();
+            let block_index = rng.gen_range(0, 7);
             let local_config = &block_config.blocks[block_index];
 
             // Transform setup
@@ -79,7 +82,7 @@ impl<'s> System<'s> for SpawnerSystem{
 
             // Set required informations to dynamic block handlers
             handler.parent = Some(parent);
-            handler.rotation = Rotation::Down;
+            handler.rotation = Rotation::Up;
             handler.config = local_config.clone();
 
             // Spawn child blocks and attach to parent transform

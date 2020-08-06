@@ -3349,6 +3349,7 @@ name = "tetris"
 version = "0.1.0"
 dependencies = [
  "amethyst",
+ "rand 0.7.3",
  "ron 0.6.0",
  "serde",
 ]
