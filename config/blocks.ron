@@ -4,9 +4,20 @@
 // Location offset should be the offset from origin. 
 // For example if origin is 2 then third value of locations should be (0.0, 0.0) 
 // and other value should be the offset from that origin.
-// Origin is rotation origin 
+// Origin is rotation origin and origin starts from 0
 // While offset means rotation offset
+// TODO Currently  rotation offset other than long stick and square is not modified from default value
 (
+	// Long Stick Block
+	// ---
+	// | |
+	// ---
+	// | |
+	// o--
+	// |O| -> Origin block. Origin point is left top point which is represented as small o in here. 
+	// ---
+	// | |
+	// ---
 	blocks: [
 	(
 		 locations : [ 
@@ -20,6 +31,130 @@
 			right_rotate: (-1,2),
 			left_rotate: (-2,1)
 		)
-	)
+	),
+	// Square Block
+	// ------
+	// | || |
+	// ---o--
+	// | ||O|
+	// ------
+	(
+		 locations : [ 
+		  (-45.0, -45.0	),
+		  (-45.0, 0.0	),
+		  (0.0, -45.0	),
+		  (0.0, 0.0		),
+		 ],
+		origin: 3,
+		offset: ( 
+			right_rotate: (0,1),
+			left_rotate: (-1,0)
+		)
+	),
+	// Mountain Block
+	// ---
+	// | |
+	// ---o--
+	// | ||O|
+	// ------
+	// | |
+	// ---
+	(
+		 locations : [ 
+		  (-45.0, -45.0	),
+		  (-45.0, 0.0	),
+		  (0.0, 0.0	),
+		  (-45.0, 45.0		),
+		 ],
+		origin: 2,
+		offset: ( 
+			right_rotate: (0,1),
+			left_rotate: (-1,0)
+		)
+	),
+	// Light cane Block
+	// ---
+	// | |
+	// ---
+	// | |
+	// o-----
+	// |O|| |
+	// ------
+	(
+		 locations : [ 
+		  (0.0, -95.0	),
+		  (0.0, -45.0	),
+		  (0.0, 0.0	),
+		  (45.0, 0.0		),
+		 ],
+		origin: 2,
+		offset: ( 
+			right_rotate: (0,1),
+			left_rotate: (-1,0)
+		)
+	),
+	// Left cane Block
+	//    ---
+	//    | |
+	//    ---
+	//    | |
+	// ---o--
+	// | ||O|
+	// ------
+	(
+		 locations : [ 
+		  (0.0, -95.0	),
+		  (0.0, -45.0	),
+		  (0.0, 0.0	),
+		  (-45.0, 0.0		),
+		 ],
+		origin: 2,
+		offset: ( 
+			right_rotate: (0,1),
+			left_rotate: (-1,0)
+		)
+	),
+	// Right zigzag Block
+	//    ---
+	//    | |
+	// ---o--
+	// | ||O|
+	// ------
+	// | |
+	// ---
+	(
+		 locations : [ 
+		  (0.0, -45.0	),
+		  (0.0, 0.0	),
+		  (-45.0, 0.0	),
+		  (-45.0, -45.0		),
+		 ],
+		origin: 1,
+		offset: ( 
+			right_rotate: (0,1),
+			left_rotate: (-1,0)
+		)
+	),
+	// Left zigzag Block
+	// ---
+	// | |
+	// o-----
+	// |O|| |
+	// ------
+	//    | |
+	//    ---
+	(
+		 locations : [ 
+		  (0.0, -45.0	),
+		  (0.0, 0.0	),
+		  (45.0, 0.0	),
+		  (45.0, -45.0		),
+		 ],
+		origin: 1,
+		offset: ( 
+			right_rotate: (0,1),
+			left_rotate: (-1,0)
+		)
+	),
 	]
 )
