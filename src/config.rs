@@ -32,6 +32,7 @@ impl BlocksConfig {
 
 #[derive(Clone, Default,Debug, Deserialize, Serialize)]
 pub struct Block {
+    //pub locations: Vec<(f32, f32)>,
     pub origin: u32,
     pub offset : Offset,
 }
