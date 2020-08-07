@@ -50,11 +50,9 @@ impl<'s> System<'s> for SpawnerSystem{
                 //yoffset += 45.0;
             //}
 
-            println!("Local transforms");
             // Set children's transform according to given offsets of local_config
             for (index, (x_offset, y_offset)) in local_config.locations.iter().enumerate() {
                 block_transforms[index].set_translation_xyz(0.0 + x_offset, 0.0 + y_offset, 0.0);
-                println!("{}", block_transforms[index].translation());
             }
 
             // SpriteSheet setup
@@ -71,7 +69,6 @@ impl<'s> System<'s> for SpawnerSystem{
 
             // Set parent transform to that of origin transform's. 
             parent_pos = block_transforms[origin_index as usize].clone();
-            println!("{}", parent_pos.translation());
             parent_pos.append_translation_xyz(WIDTH - 45.0 * 5.0, HEIGHT - 45.0 * 2.0, 0.0);
 
             // Update entity with new transform component
@@ -111,7 +108,6 @@ impl<'s> System<'s> for SpawnerSystem{
 
                 handler.blocks.push(new_block);
             }
-            //println!("{}", handler.blocks.len());
         }
     }
 

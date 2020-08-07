@@ -1,17 +1,18 @@
 use amethyst::{
 //    prelude::*,
-    core::math::Matrix4,
     core::timing::Time,
     core::transform::Transform,
 //    core::SystemDesc,
     derive::SystemDesc,
-    ecs::prelude::{ReadExpect, WriteExpect, System, ReadStorage, Join, Read, SystemData, WriteStorage},
+    ecs::prelude::{ReadExpect, WriteExpect, System, ReadStorage, Join, Read, SystemData, WriteStorage, World},
     input::{InputHandler},
+    shrev::{ReaderId, EventChannel},
 };
 
 use crate::component::dyn_block::{DynamicBlock, DynBlockHandler, Rotation};
 use crate::component::stt_block::StaticBlock;
 use crate::config::{MovementBindingTypes, AxisBinding, ActionBinding};
+use crate::system::stack_system::StackEvent;
 use std::f64::consts::PI;
 
 const INPUTINTERVAL: f32 = 0.05;
@@ -20,14 +21,20 @@ const EPSILON: f32 = 0.0001;
 #[derive(SystemDesc)]
 pub struct KeyInputSystem {
     pub key_interval: Option<f32>,
+    reader_id : ReaderId<StackEvent>,
     noinput: NoInput,
+    no_vert: bool,
 }
 
-impl Default for KeyInputSystem {
-    fn default() -> KeyInputSystem {
-        KeyInputSystem {
+impl KeyInputSystem {
+    pub fn new(world: &mut World) -> Self {
+        <Self as System<'_>>::SystemData::setup(world);
+        let reader_id = world.fetch_mut::<EventChannel<StackEvent>>().register_reader();
+        Self { 
             key_interval: None,
             noinput: NoInput::None,
+            reader_id,
+            no_vert: false,
         }
     }
 }
@@ -50,10 +57,10 @@ impl<'s> System<'s> for KeyInputSystem {
         WriteExpect<'s, DynBlockHandler>,
         Read<'s, InputHandler<MovementBindingTypes>>,
         Read<'s, Time>,
+        Read<'s, EventChannel<StackEvent>>,
     );
 
-    fn run(&mut self, (mut locals ,blocks, stt, mut handler, input, time): Self::SystemData) {
-
+    fn run(&mut self, (mut locals ,blocks, stt, mut handler, input, time, event_channel): Self::SystemData) {
         if handler.blocks.len() == 0 {
             return;
         }
@@ -110,6 +117,10 @@ impl<'s> System<'s> for KeyInputSystem {
             let mut horizontal = input.axis_value(&AxisBinding::Horizontal).unwrap_or(0.0);
             let mut vertical = input.axis_value(&AxisBinding::Vertical).unwrap_or(0.0);
 
+            if horizontal != 0.0 {
+                vertical = 0.0;
+            }
+
             // If input blockage detected then invalidate given axis value
             match self.noinput {
                 NoInput::Left => {
@@ -130,6 +141,26 @@ impl<'s> System<'s> for KeyInputSystem {
                 vertical = 0.0;
             }
 
+            if vertical < 0.0 {
+                for entity in handler.blocks.iter() {
+
+                    let x_pos = locals.get(*entity).unwrap().global_matrix().m14.round();
+                    let y_pos = locals.get(*entity).unwrap().global_matrix().m24.round();
+                    if y_pos == 45.0 {
+                        vertical = 0.0;
+                        break;
+                    }
+
+                    for (local, _block, _) in ( &mut locals, &blocks ,&stt).join(){
+                        if y_pos == local.global_matrix().m24.round() + 45.0
+                            && x_pos == local.global_matrix().m14.round(){
+                                vertical = 0.0;
+                                break;
+                        } 
+                    }
+                }
+            }
+
             // Now translate blocks according to user inputs for real.
             if let Some(parent) = handler.parent {
                 if let Some(local) = locals.get_mut(parent) {
@@ -146,11 +177,6 @@ impl<'s> System<'s> for KeyInputSystem {
             // Currently for Debugging purpose
             // Print out useful location informations
             if shoot {
-                //println!("-------------------------");
-                //println!("Printing local transforms");
-                //for (local, _block, _) in ( &mut locals, &blocks ,&stt).join(){
-                    //println!("X : {}, Y : {}", local.global_matrix().m14, local.global_matrix().m24);
-                //}
 
                 //println!("Printing handler's blocks transforms");
                 println!("Printing DEBUGGING Informations ...");
@@ -158,9 +184,6 @@ impl<'s> System<'s> for KeyInputSystem {
                 for entity in &handler.blocks {
                     println!("X : {}, Y : {}", locals.get(*entity).unwrap().global_matrix().m14, locals.get(*entity).unwrap().global_matrix().m24);
                 }
-                //let (x, y) = handler.get_x_y_count(Rotation::Right);
-                //println!("X, Y value to Move is {}, {}", x, y);
-                //println!("-------------------------");
             }
 
             // If right rotate button was given
@@ -179,8 +202,6 @@ impl<'s> System<'s> for KeyInputSystem {
                     start = s;
                     end = e;
                 }
-
-                println!("Start is : {}, End is {}", start, end);
 
                 // Check Rotation validation prevent roation when not possible by meaning
                 // Get offset
@@ -219,8 +240,6 @@ impl<'s> System<'s> for KeyInputSystem {
                 }
 
                 if let Some(_) = handler.config.sub_offset {
-                    println!("Checking sub offsets");
-
                     // Reuse variables names because the variables are not gonna used again.
                     let start: f32;
                     let end: f32;
@@ -234,7 +253,6 @@ impl<'s> System<'s> for KeyInputSystem {
                         start = s;
                         end = e;
                     }
-                    println!("With Start : {}, End : {}", start, end);
                     let x: f32;
                     let y: f32;
 
@@ -260,8 +278,6 @@ impl<'s> System<'s> for KeyInputSystem {
                                     break;
                             } 
                         }
-                        println!("With ...");
-                        println!("X : {}, Y : {}", parent.m14.round() + count as f32 * x * 45.0, parent.m24.round() + count as f32 * y * 45.0);
                         if parent.m14.round() + count as f32 * x * 45.0 == -45.0 
                             || parent.m14.round() + count as f32 * x * 45.0 == WIDTH 
                                 || parent.m24.round() + count as f32 * y * 45.0 == 0.0
