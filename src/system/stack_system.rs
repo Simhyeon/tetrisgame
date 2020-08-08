@@ -61,26 +61,13 @@ impl<'s> System<'s> for StackSystem {
             return;
         }
 
+        let mut stack_confirm = false;
         if self.to_be_stacked {
             //Wait for certain times and 
             self.stack_delay -= time.delta_seconds();
             if self.stack_delay <= 0.0 {
-
-                // Reset variables
-                self.stack_delay = STACKDELAY;
-                self.to_be_stacked = false;
-
-                // Now stack the blocks
-                for entity in &handler.blocks {
-                    stt_blocks.insert(*entity, StaticBlock).expect("ERR");
-                }
-                handler.blocks.clear();
-                event_channel.single_write(StackEvent::Stacked);
-                println!("Stacked!");
+                stack_confirm = true;
             }
-
-            // If time has not passed then return
-            //return;
         }
 
         let mut to_free : bool = false;
@@ -121,6 +108,21 @@ impl<'s> System<'s> for StackSystem {
             event_channel.single_write(StackEvent::Free);
             self.stack_delay = STACKDELAY;
             self.to_be_stacked = false;
+            return;
+        }
+
+        if stack_confirm {
+            // Reset variables
+            self.stack_delay = STACKDELAY;
+            self.to_be_stacked = false;
+
+            // Now stack the blocks
+            for entity in &handler.blocks {
+                stt_blocks.insert(*entity, StaticBlock).expect("ERR");
+            }
+            handler.blocks.clear();
+            event_channel.single_write(StackEvent::Stacked);
+            println!("Stacked!");
         }
     }
 }

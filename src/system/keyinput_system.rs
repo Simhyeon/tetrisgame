@@ -16,6 +16,7 @@ use crate::system::stack_system::StackEvent;
 use std::f64::consts::PI;
 use std::cmp::Ordering;
 
+const INPUTDELAY : f32 = 0.07;
 const EPSILON: f32 = 0.0001;
 
 #[derive(SystemDesc)]
@@ -23,6 +24,7 @@ pub struct KeyInputSystem {
     pub key_interval: Option<f32>,
     noinput: NoInput,
     key_status: KeyStatus,
+    axis_delay: f32,
 }
 
 // If same key press was given then set that input as hold
@@ -38,6 +40,7 @@ impl KeyInputSystem {
             key_interval: None,
             noinput: NoInput::None,
             key_status : KeyStatus::default(),
+            axis_delay : INPUTDELAY,
         }
     }
 
@@ -51,13 +54,26 @@ impl KeyInputSystem {
         self.key_status.update_left(!left_value);
     }
 
-    fn ignore_hold_key(&mut self, horizontal_value: &mut f32, vertical_value: &mut f32, right_value: &mut bool, left_value: &mut bool) {
+    fn delay_hold_input(&mut self, horizontal_value: &mut f32, vertical_value: &mut f32, right_value: &mut bool, left_value: &mut bool, dtime: f32) {
+
+        // Disblae for axis input
         if let KeyPressType::Hold = self.key_status.horizontal {
-            *horizontal_value = 0.0;
+            if self.axis_delay >= 0.0 {
+                *horizontal_value = 0.0;
+                self.axis_delay -= dtime;
+            } else {
+                self.axis_delay = INPUTDELAY;
+            }
         }
         if let KeyPressType::Hold = self.key_status.vertical {
-            *vertical_value = 0.0;
+            if self.axis_delay >= 0.0 {
+                *vertical_value = 0.0;
+                self.axis_delay -= dtime;
+            } else {
+                self.axis_delay = INPUTDELAY;
+            }
         }
+
         if let KeyPressType::Hold = self.key_status.right_rotate {
             *right_value = false;
         }
@@ -84,9 +100,10 @@ impl<'s> System<'s> for KeyInputSystem {
         ReadStorage<'s ,StaticBlock>,
         WriteExpect<'s, DynBlockHandler>,
         Read<'s, InputHandler<MovementBindingTypes>>,
+        Read<'s, Time>,
     );
 
-    fn run(&mut self, (mut locals ,blocks, stt, mut handler, input): Self::SystemData) {
+    fn run(&mut self, (mut locals ,blocks, stt, mut handler, input, time): Self::SystemData) {
         if handler.blocks.len() == 0 {
             return;
         }
@@ -100,7 +117,7 @@ impl<'s> System<'s> for KeyInputSystem {
 
         // Up
         self.update_key_status(horizontal, vertical, rotate_right, rotate_left);
-        self.ignore_hold_key(&mut horizontal, &mut vertical, &mut rotate_right, &mut rotate_left);
+        self.delay_hold_input(&mut horizontal, &mut vertical, &mut rotate_right, &mut rotate_left, time.delta_seconds());
 
         if horizontal != 0.0 {
             vertical = 0.0;
@@ -109,14 +126,6 @@ impl<'s> System<'s> for KeyInputSystem {
         // Only get negative vertical value 
         // Player cannot move blocks upward.
         if vertical > 0.0 {
-            vertical = 0.0;
-        }
-
-        // ignore hold key_press
-        if let KeyPressType::Hold = self.key_status.horizontal {
-            horizontal = 0.0;
-        }
-        if let KeyPressType::Hold = self.key_status.vertical {
             vertical = 0.0;
         }
 

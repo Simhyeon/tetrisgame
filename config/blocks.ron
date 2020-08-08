@@ -121,8 +121,8 @@
 		 ],
 		origin: 2,
 		offset: ( 
-			right_rotate: (0,1),
-			left_rotate: (-1,0)
+			right_rotate: (0,2),
+			left_rotate: (-2,0)
 		),
 		sub_offset: Some(
 			(
