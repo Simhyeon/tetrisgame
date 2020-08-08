@@ -4,7 +4,7 @@ use amethyst::{
     core::transform::Transform,
 //    core::SystemDesc,
     derive::SystemDesc,
-    ecs::prelude::{ReadExpect, WriteExpect, System, ReadStorage, Join, Read, SystemData, WriteStorage, World},
+    ecs::prelude::{WriteExpect, System, ReadStorage, Join, Read, SystemData, WriteStorage, World},
     input::{InputHandler},
     shrev::{ReaderId, EventChannel},
 };
@@ -12,7 +12,6 @@ use amethyst::{
 use crate::component::dyn_block::{DynamicBlock, DynBlockHandler, Rotation};
 use crate::component::stt_block::StaticBlock;
 use crate::config::{MovementBindingTypes, AxisBinding, ActionBinding};
-use crate::system::stack_system::StackEvent;
 use std::f64::consts::PI;
 use std::cmp::Ordering;
 
@@ -25,6 +24,13 @@ pub struct KeyInputSystem {
     noinput: NoInput,
     key_status: KeyStatus,
     axis_delay: f32,
+    reader_id : ReaderId<KeyInt>,
+
+}
+
+pub enum KeyInt {
+    Stack,
+    None,
 }
 
 // If same key press was given then set that input as hold
@@ -35,12 +41,15 @@ enum KeyPressType {
 }
 
 impl KeyInputSystem {
-    pub fn new() -> Self {
+    pub fn new(world: &mut World) -> Self {
+        <Self as System<'_>>::SystemData::setup(world);
+        let reader_id = world.fetch_mut::<EventChannel<KeyInt>>().register_reader();
         Self { 
             key_interval: None,
             noinput: NoInput::None,
             key_status : KeyStatus::default(),
             axis_delay : INPUTDELAY,
+            reader_id,
         }
     }
 
@@ -101,11 +110,22 @@ impl<'s> System<'s> for KeyInputSystem {
         WriteExpect<'s, DynBlockHandler>,
         Read<'s, InputHandler<MovementBindingTypes>>,
         Read<'s, Time>,
+        Read<'s, EventChannel<KeyInt>>,
     );
 
-    fn run(&mut self, (mut locals ,blocks, stt, mut handler, input, time): Self::SystemData) {
+    fn run(&mut self, (mut locals ,blocks, stt, mut handler, input, time, event_channel): Self::SystemData) {
         if handler.blocks.len() == 0 {
             return;
+        }
+
+        for event in event_channel.read(&mut self.reader_id) {
+            match event {
+                KeyInt::Stack => {
+                    println!("KEY INTERRUPTED");
+                    return;
+                }
+                _ => ()
+            }
         }
 
         // get input value from key input
@@ -238,6 +258,16 @@ impl<'s> System<'s> for KeyInputSystem {
                 let (s, e) = handler.get_count(Rotation::Left);
                 start = s;
                 end = e;
+            }
+
+            // No offset has been given so that
+            if start == 0.0 && end == 0.0 {
+                // This is to return before looping which is heavy operations 
+                // But this is dangergous approach since there might be neccessary operation 
+                // After this code
+                // So becareful when you need to change this code or add some operation after this
+                // line.
+                return;
             }
 
             // Check Rotation validation prevent roation when not possible

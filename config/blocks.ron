@@ -29,10 +29,10 @@
 		  (0.0, -45.0	),
 		 ],
 		origin: 2,
-		offset: ( 
+		offset: Some(( 
 			right_rotate: (-1,2),
 			left_rotate: (-2,1)
-		),
+		)),
 		sub_offset: None,
 	),
 	// Square Block [1]
@@ -49,10 +49,7 @@
 		  (0.0, 0.0		),
 		 ],
 		origin: 3,
-		offset: ( 
-			right_rotate: (0,1),
-			left_rotate: (-1,0)
-		),
+		offset: None,
 		sub_offset: None,
 	),
 	// Mountain Block [2]
@@ -71,10 +68,10 @@
 		  (0.0, -45.0		),
 		 ],
 		origin: 1,
-		offset: ( 
+		offset: Some(( 
 			right_rotate: (-1,1),
 			left_rotate: (-1,1)
-		),
+		)),
 		sub_offset: None,
 	),
 	// Light cane Block [3]
@@ -93,16 +90,14 @@
 		  (45.0, 0.0),
 		 ],
 		origin: 2,
-		offset: ( 
+		offset: Some(( 
 			right_rotate: (0,2),
 			left_rotate: (-2,0)
-		),
-		sub_offset: Some(
-			(
+		)),
+		sub_offset: Some((
 				right_rotate: (-1,0),
 				left_rotate: (0,1)
-			)
-		),
+		)),
 	),
 	// Left cane Block [4]
 	//    ---
@@ -120,16 +115,14 @@
 		  (-45.0, 0.0		),
 		 ],
 		origin: 2,
-		offset: ( 
+		offset: Some(( 
 			right_rotate: (0,2),
 			left_rotate: (-2,0)
-		),
-		sub_offset: Some(
-			(
+		)),
+		sub_offset: Some((
 				right_rotate: (0,1),
 				left_rotate: (-1,0)
-			)
-		),
+		)),
 	),
 	// Right zigzag Block [5]
 	//    ---
@@ -147,10 +140,10 @@
 		  (-45.0, -45.0		),
 		 ],
 		origin: 1,
-		offset: ( 
+		offset: Some(( 
 			right_rotate: (-1,1),
 			left_rotate: (-1,1)
-		),
+		)),
 		sub_offset: None,
 	),
 	// Left zigzag Block [6]
@@ -169,10 +162,10 @@
 		  (45.0, -45.0		),
 		 ],
 		origin: 1,
-		offset: ( 
+		offset: Some(( 
 			right_rotate: (-1,1),
 			left_rotate: (-1,1)
-		),
+		)),
 		sub_offset: None,
 	),
 	]

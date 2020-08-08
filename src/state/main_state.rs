@@ -24,7 +24,7 @@ impl<'a, 'b> SimpleState for MainState<'a, 'b>{
         let world = &mut data.world;
 
         let mut dispatcher_builder = DispatcherBuilder::new();
-        dispatcher_builder.add(KeyInputSystem::new(), "keyinput_system", &[]);
+        dispatcher_builder.add(KeyInputSystem::new(world), "keyinput_system", &[]);
         // Backup for Stack system
         //dispatcher_builder.add(StackSystem::default(), "stack_system", &["gravity_system"]);
         dispatcher_builder.add(StackSystem::default(), "stack_system", &["keyinput_system"]);

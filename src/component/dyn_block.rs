@@ -50,36 +50,44 @@ impl DynBlockHandler {
 
     pub fn get_count(&self, direction: Rotation) -> (f32, f32) {
         if let Rotation::Right = direction {
-            let (start, end) = self.config.offset.right_rotate;
-            match self.rotation {
-                Rotation::Up => {
-                    (start, end)
+            if let Some(offset) = self.config.offset {
+                let (start, end) = offset.right_rotate;
+                match self.rotation {
+                    Rotation::Up => {
+                        (start, end)
+                    }
+                    Rotation::Right=> {
+                        (-end, -start)
+                    }
+                    Rotation::Down => {
+                        (-end, -start)
+                    }
+                    Rotation::Left => {
+                        (start, end)
+                    }
                 }
-                Rotation::Right=> {
-                    (-end, -start)
-                }
-                Rotation::Down => {
-                    (-end, -start)
-                }
-                Rotation::Left => {
-                    (start, end)
-                }
+            } else {
+                (0.0,0.0)
             }
         } else if let Rotation::Left = direction {
-            let (start, end) = self.config.offset.left_rotate;
-            match self.rotation {
-                Rotation::Up => {
-                    (start, end)
+            if let Some(offset) = self.config.offset {
+                let (start, end) = offset.left_rotate;
+                match self.rotation {
+                    Rotation::Up => {
+                        (start, end)
+                    }
+                    Rotation::Right=> {
+                        (-end, -start)
+                    }
+                    Rotation::Down => {
+                        (-end, -start)
+                    }
+                    Rotation::Left => {
+                        (start, end)
+                    }
                 }
-                Rotation::Right=> {
-                    (-end, -start)
-                }
-                Rotation::Down => {
-                    (-end, -start)
-                }
-                Rotation::Left => {
-                    (start, end)
-                }
+            } else {
+                (0.0, 0.0)
             }
         } else {
             (0.0, 0.0)

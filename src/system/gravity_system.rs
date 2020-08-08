@@ -11,7 +11,7 @@ use amethyst::{
 use crate::component::dyn_block::{DynamicBlock, DynBlockHandler};
 use crate::system::stack_system::StackEvent;
 
-const MOVEDELAY: f32 = 0.6;
+const MOVEDELAY: f32 = 0.8;
 
 #[derive(SystemDesc)]
 pub struct GravitySystem{

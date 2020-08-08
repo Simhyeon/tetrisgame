@@ -8,8 +8,10 @@ use amethyst::{
 
 use crate::component::dyn_block::{DynamicBlock, DynBlockHandler};
 use crate::component::stt_block::StaticBlock;
+use crate::system::keyinput_system::KeyInt;
 
 const STACKDELAY: f32 = 0.3;
+const KEYINTDELAY: f32 = 0.05;
 
 #[derive(Debug)]
 pub enum StackEvent {
@@ -51,12 +53,13 @@ impl<'s> System<'s> for StackSystem {
         WriteStorage<'s, StaticBlock>,
         ReadStorage<'s, Transform>,
         Write<'s, EventChannel<StackEvent>>,
+        Write<'s, EventChannel<KeyInt>>,
         Read<'s, Time>
     );
 
     // TODO Change to_be_stacked value as some kind of trigger
     // TODO THIS CODE IS SHIT FUCK ME
-    fn run(&mut self, (mut handler, dyn_blocks, mut stt_blocks, locals, mut event_channel, time): Self::SystemData) {
+    fn run(&mut self, (mut handler, dyn_blocks, mut stt_blocks, locals, mut stack_event_channel,mut key_event_channel, time): Self::SystemData) {
         if handler.blocks.len() == 0 {
             return;
         }
@@ -67,6 +70,17 @@ impl<'s> System<'s> for StackSystem {
             self.stack_delay -= time.delta_seconds();
             if self.stack_delay <= 0.0 {
                 stack_confirm = true;
+            } else if self.stack_delay <= KEYINTDELAY {
+                // This else if statement is to prevent from user to give input at the same time
+                // block is stacked. Which makes block stacked on air. Which is not desired
+                // actions.
+                // However this method is not good at all. Since sending key event is based on
+                // delta time which is time between continous function calls. and such delta
+                // time can be different among other devices and enviorments.
+                // For example when os failed to allocate enough resource for ths program
+                // then this functionality might fail. 
+                // (While it is also highly expected to fail to get user input anyway.)
+                key_event_channel.single_write(KeyInt::Stack);
             }
         }
 
@@ -76,7 +90,7 @@ impl<'s> System<'s> for StackSystem {
                 if !self.to_be_stacked {
                     self.to_be_stacked = true;
                     println!("TOBESTACKED");
-                    event_channel.single_write(StackEvent::ToBeStacked);
+                    stack_event_channel.single_write(StackEvent::ToBeStacked);
                 }
                 to_free = false;
                 break;
@@ -88,7 +102,7 @@ impl<'s> System<'s> for StackSystem {
                         if !self.to_be_stacked {
                             self.to_be_stacked = true;
                             println!("TOBESTACKED");
-                            event_channel.single_write(StackEvent::ToBeStacked);
+                            stack_event_channel.single_write(StackEvent::ToBeStacked);
                         }
                         to_free = false;
                         break 'outer;
@@ -105,7 +119,7 @@ impl<'s> System<'s> for StackSystem {
         // detected stack call  and now it is not detected.
         if self.to_be_stacked && to_free {
             println!("Free stack event");
-            event_channel.single_write(StackEvent::Free);
+            stack_event_channel.single_write(StackEvent::Free);
             self.stack_delay = STACKDELAY;
             self.to_be_stacked = false;
             return;
@@ -121,7 +135,7 @@ impl<'s> System<'s> for StackSystem {
                 stt_blocks.insert(*entity, StaticBlock).expect("ERR");
             }
             handler.blocks.clear();
-            event_channel.single_write(StackEvent::Stacked);
+            stack_event_channel.single_write(StackEvent::Stacked);
             println!("Stacked!");
         }
     }
