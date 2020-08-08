@@ -2,8 +2,8 @@ use amethyst::{
     core::timing::Time,
     core::transform::Transform,
     derive::SystemDesc,
-    ecs::prelude::{Join, System, SystemData, WriteStorage, ReadStorage, WriteExpect, Write, Read},
-    shrev::EventChannel,
+    ecs::prelude::{Join, System, SystemData, WriteStorage, ReadStorage, WriteExpect, Write, Read, World},
+    shrev::{EventChannel, ReaderId},
 };
 
 use crate::component::dyn_block::{DynamicBlock, DynBlockHandler};
@@ -26,10 +26,10 @@ pub struct StackSystem {
     stack_delay: f32,
 }
 
-impl Default for StackSystem {
-    fn default() -> Self {
-        Self {
-            to_be_stacked: false,
+impl StackSystem {
+    pub fn new() -> Self {
+        Self {  
+            to_be_stacked : false,
             stack_delay: STACKDELAY,
         }
     }
@@ -59,7 +59,7 @@ impl<'s> System<'s> for StackSystem {
 
     // TODO Change to_be_stacked value as some kind of trigger
     // TODO THIS CODE IS SHIT FUCK ME
-    fn run(&mut self, (mut handler, dyn_blocks, mut stt_blocks, locals, mut stack_event_channel,mut key_event_channel, time): Self::SystemData) {
+    fn run(&mut self, (mut handler, dyn_blocks, mut stt_blocks, locals, mut stack_event, mut write_key_event, time): Self::SystemData) {
         if handler.blocks.len() == 0 {
             return;
         }
@@ -80,7 +80,7 @@ impl<'s> System<'s> for StackSystem {
                 // For example when os failed to allocate enough resource for ths program
                 // then this functionality might fail. 
                 // (While it is also highly expected to fail to get user input anyway.)
-                key_event_channel.single_write(KeyInt::Stack);
+                write_key_event.single_write(KeyInt::Stack);
             }
         }
 
@@ -90,7 +90,7 @@ impl<'s> System<'s> for StackSystem {
                 if !self.to_be_stacked {
                     self.to_be_stacked = true;
                     println!("TOBESTACKED");
-                    stack_event_channel.single_write(StackEvent::ToBeStacked);
+                    stack_event.single_write(StackEvent::ToBeStacked);
                 }
                 to_free = false;
                 break;
@@ -102,7 +102,7 @@ impl<'s> System<'s> for StackSystem {
                         if !self.to_be_stacked {
                             self.to_be_stacked = true;
                             println!("TOBESTACKED");
-                            stack_event_channel.single_write(StackEvent::ToBeStacked);
+                            stack_event.single_write(StackEvent::ToBeStacked);
                         }
                         to_free = false;
                         break 'outer;
@@ -112,17 +112,6 @@ impl<'s> System<'s> for StackSystem {
             // During Looping no stack conditions has been detected;
             // which means condifion for freeing gravity system has been met
             to_free = true;
-        }
-
-        // if gravtiy free condition has been met and also 
-        // to_be_stacked was already called which means stack system priorly
-        // detected stack call  and now it is not detected.
-        if self.to_be_stacked && to_free {
-            println!("Free stack event");
-            stack_event_channel.single_write(StackEvent::Free);
-            self.stack_delay = STACKDELAY;
-            self.to_be_stacked = false;
-            return;
         }
 
         if stack_confirm {
@@ -135,8 +124,20 @@ impl<'s> System<'s> for StackSystem {
                 stt_blocks.insert(*entity, StaticBlock).expect("ERR");
             }
             handler.blocks.clear();
-            stack_event_channel.single_write(StackEvent::Stacked);
+            stack_event.single_write(StackEvent::Stacked);
             println!("Stacked!");
+            return;
+        }
+
+        // if gravtiy free condition has been met and also 
+        // to_be_stacked was already called which means stack system priorly
+        // detected stack call  and now it is not detected.
+        if self.to_be_stacked && to_free {
+            println!("Free stack event");
+            stack_event.single_write(StackEvent::Free);
+            self.stack_delay = STACKDELAY;
+            self.to_be_stacked = false;
+            return;
         }
     }
 }

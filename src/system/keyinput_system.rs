@@ -4,7 +4,7 @@ use amethyst::{
     core::transform::Transform,
 //    core::SystemDesc,
     derive::SystemDesc,
-    ecs::prelude::{WriteExpect, System, ReadStorage, Join, Read, SystemData, WriteStorage, World},
+    ecs::prelude::{WriteExpect, System, ReadStorage, Join, Read, SystemData, WriteStorage, World, Write},
     input::{InputHandler},
     shrev::{ReaderId, EventChannel},
 };
@@ -25,12 +25,10 @@ pub struct KeyInputSystem {
     key_status: KeyStatus,
     axis_delay: f32,
     reader_id : ReaderId<KeyInt>,
-
 }
 
 pub enum KeyInt {
     Stack,
-    None,
 }
 
 // If same key press was given then set that input as hold
@@ -113,12 +111,12 @@ impl<'s> System<'s> for KeyInputSystem {
         Read<'s, EventChannel<KeyInt>>,
     );
 
-    fn run(&mut self, (mut locals ,blocks, stt, mut handler, input, time, event_channel): Self::SystemData) {
+    fn run(&mut self, (mut locals ,blocks, stt, mut handler, input, time, read_event_channel): Self::SystemData) {
         if handler.blocks.len() == 0 {
             return;
         }
 
-        for event in event_channel.read(&mut self.reader_id) {
+        for event in read_event_channel.read(&mut self.reader_id) {
             match event {
                 KeyInt::Stack => {
                     println!("KEY INTERRUPTED");
@@ -231,17 +229,11 @@ impl<'s> System<'s> for KeyInputSystem {
             }
         }
 
-        // Currently for Debugging purpose
-        // Print out useful location informations
-        if shoot {
 
-            //println!("Printing handler's blocks transforms");
-            println!("Printing DEBUGGING Informations ...");
-            println!("Current rotation is :{:?}", handler.rotation);
-            for entity in &handler.blocks {
-                println!("X : {}, Y : {}", locals.get(*entity).unwrap().global_matrix().m14, locals.get(*entity).unwrap().global_matrix().m24);
-            }
-        }
+        //// Currently emtpy code
+        //if shoot {
+
+        //}
 
         // If rotate button was given
         if rotate_right || rotate_left {

@@ -47,7 +47,8 @@ fn main() -> amethyst::Result<()> {
             RenderingBundle::<DefaultBackend>::new()
             .with_plugin(
                 RenderToWindow::from_config_path(display_config_path)?
-                .with_clear([255.0, 255.0, 255.0, 0.0]),
+                .with_clear([0.0, 0.0, 0.0]),
+                //.with_clear([255.0, 255.0, 255.0, 0.0]),
             )
             .with_plugin(RenderFlat2D::default())
             //.with_plugin(RenderUi::default()) TODO 아직 UI는 필요없다. 
