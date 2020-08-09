@@ -53,7 +53,7 @@ impl KeyInputSystem {
         }
     }
 
-    fn update_key_status(&mut self, horizontal_value: f32, vertical_value: f32, right_value: bool, left_value: bool) {
+    fn update_key_status(&mut self, horizontal_value: f32, vertical_value: f32, right_value: bool, left_value: bool, shoot_value: bool) {
         self.key_status.update_hor(horizontal_value);
         self.key_status.update_ver(vertical_value);
         // This is because right_value and left_value is given true when clicked
@@ -61,11 +61,12 @@ impl KeyInputSystem {
         // So to update key_status you should set negation of rotation value
         self.key_status.update_right(!right_value);
         self.key_status.update_left(!left_value);
+        self.key_status.update_shoot(!shoot_value);
     }
 
-    fn delay_hold_input(&mut self, horizontal_value: &mut f32, vertical_value: &mut f32, right_value: &mut bool, left_value: &mut bool, dtime: f32) {
+    fn delay_hold_input(&mut self, horizontal_value: &mut f32, vertical_value: &mut f32, right_value: &mut bool, left_value: &mut bool, shoot_value: &mut bool, dtime: f32) {
 
-        // Disblae for axis input
+        // Disable for axis input
         if let KeyPressType::Hold = self.key_status.horizontal {
             if self.axis_delay >= 0.0 {
                 *horizontal_value = 0.0;
@@ -88,6 +89,10 @@ impl KeyInputSystem {
         }
         if let KeyPressType::Hold = self.key_status.left_rotate {
             *left_value = false;
+        }
+
+        if let KeyPressType::Hold = self.key_status.shoot {
+            *shoot_value = false;
         }
     }
 }
@@ -133,11 +138,11 @@ impl<'s> System<'s> for KeyInputSystem {
         let mut vertical = input.axis_value(&AxisBinding::Vertical).unwrap_or(0.0);
         let mut rotate_right = input.action_is_down(&ActionBinding::RotateRight).unwrap_or(false);
         let mut rotate_left = input.action_is_down(&ActionBinding::RotateLeft).unwrap_or(false);
-        let shoot = input.action_is_down(&ActionBinding::Shoot).unwrap_or(false);
+        let mut shoot = input.action_is_down(&ActionBinding::Shoot).unwrap_or(false);
 
         // Up
-        self.update_key_status(horizontal, vertical, rotate_right, rotate_left);
-        self.delay_hold_input(&mut horizontal, &mut vertical, &mut rotate_right, &mut rotate_left, time.delta_seconds());
+        self.update_key_status(horizontal, vertical, rotate_right, rotate_left, shoot);
+        self.delay_hold_input(&mut horizontal, &mut vertical, &mut rotate_right, &mut rotate_left, &mut shoot, time.delta_seconds());
 
         if horizontal != 0.0 {
             vertical = 0.0;
@@ -234,21 +239,57 @@ impl<'s> System<'s> for KeyInputSystem {
 
         //// Currently emtpy code mostly deserved for debugging
         if shoot {
-            //println!("PRINTING");
-            //println!("END -- PRINTING");
-            
-            //println!("{:?}", locals.get(handler.parent.unwrap()).unwrap().euler_angles());
-            println!("{}", *block_data);
-            //for (local, _block, _) in ( &mut locals, &blocks ,&stt).join() {
-                //println!("{}", local.global_matrix());
-            //}
+            // get the most downward block
+            let mut down_most: Vec<(f32, f32)> = vec![];
+            for entity in handler.blocks.iter() {
+                let local_matrix = locals.get(*entity).unwrap().global_matrix();
+                println!("Comparing ({}, {})", local_matrix.m14, local_matrix.m24);
+                if down_most.len() == 0 {
+                    down_most.push((local_matrix.m14.round(), local_matrix.m24.round()));
+                } else if down_most[0].1 > local_matrix.m24.round() {
+                    down_most.clear();
+                    down_most.push((local_matrix.m14.round(), local_matrix.m24.round()));
+                } else if down_most[0].1 == local_matrix.m24.round() {
+                    down_most.push((local_matrix.m14.round(), local_matrix.m24.round()));
+                }
+            }
 
-            //let array = block_data.get_row(45.0);
-            //for item in array {
-                //if let Some(value) = item {
-                    //println!("{}", locals.get(value).unwrap().global_matrix());
-                //}
-            //}
+
+            let mut top_most: (f32, f32) = (-1.0, -1.0);
+            let mut distance: f32 = 0.0;
+            for tuple in down_most.iter() {
+                // Get top_most location of down_most columns
+                if let Some(entity) = block_data.get_top_block(tuple.0) {
+                    let matrix = locals.get(entity).unwrap().global_matrix();
+                    if top_most.0 == -1.0 {
+                        top_most = (matrix.m14.round(), matrix.m24.round());
+                    } else if top_most.1 < matrix.m24 {
+                        top_most = (matrix.m14.round(), matrix.m24.round());
+                    }
+                    distance = tuple.1 - top_most.1;
+                } else {
+                    if top_most.0 == -1.0 {
+                        top_most = (tuple.0, 0.0);
+                        distance = tuple.1;
+                    }
+                }
+            }
+
+
+            let parent_transform = locals.get(handler.parent.unwrap()).unwrap();
+            println!("Down Most ----> {:?}", down_most);
+            println!("Top Most  ----> {:?}", top_most);
+            println!("Origin    ----> ({}, {})", parent_transform.global_matrix().m14, parent_transform.global_matrix().m24);
+            println!("Distance1 ----> {:?}", distance);
+            distance -= parent_transform.global_matrix().m24 - down_most[0].1;
+            // Some hardcoded fix for strange problem I guess?
+            if parent_transform.global_matrix().m24.round() 
+                == down_most[0].1.round() {
+                distance -= 45.0;
+            }
+            println!("Distance2 ----> {:?}", distance);
+
+            locals.get_mut(handler.parent.unwrap()).unwrap().prepend_translation_y(-distance);
         }
 
         // If rotate button was given
@@ -416,7 +457,7 @@ struct KeyStatus {
     pub vertical: KeyPressType,
     pub right_rotate: KeyPressType,
     pub left_rotate: KeyPressType,
-    //shoot: KeyPressType,
+    pub shoot: KeyPressType,
 }
 
 impl Default for KeyStatus {
@@ -426,6 +467,7 @@ impl Default for KeyStatus {
             vertical: KeyPressType::None,
             right_rotate: KeyPressType::None,
             left_rotate: KeyPressType::None,
+            shoot: KeyPressType::None,
         }
     }
 
@@ -485,6 +527,20 @@ impl KeyStatus {
         match self.left_rotate {
             KeyPressType::None => self.left_rotate = KeyPressType::Click,
             KeyPressType::Click => self.left_rotate = KeyPressType::Hold,
+            _ => ()
+        }
+    }
+
+    fn update_shoot(&mut self, set_to_none: bool) {
+
+        if set_to_none {
+            self.shoot = KeyPressType::None;
+            return;
+        }
+
+        match self.shoot {
+            KeyPressType::None => self.shoot = KeyPressType::Click,
+            KeyPressType::Click => self.shoot = KeyPressType::Hold,
             _ => ()
         }
     }

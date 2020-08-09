@@ -74,6 +74,18 @@ impl BlockData {
         }
     }
 
+    pub fn get_top_block(&self, x_value: f32) -> Option<Entity>{
+        let index = Self::get_row_index_from_m14(x_value);
+        let mut ent: Option<Entity> = None;
+        for col in 0..BLOCK_HEIGHT {
+            if let Some(entity) = self.data[col][index] {
+                ent.replace(entity);
+            }
+        }
+
+        ent
+    }
+
     pub fn remove_lows(&mut self, matrix_m24: f32) -> Vec<Option<Entity>> {
         let index = Self::get_col_index_from_m24(matrix_m24);
         let mut upper_vec: Vec<Option<Entity>> = vec![];
