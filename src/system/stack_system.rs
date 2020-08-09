@@ -19,19 +19,26 @@ pub enum StackEvent {
     Stacked,
     ToBeStacked,
     Free,
+    IgnoreDelay,
 }
 
 #[derive(SystemDesc)]
 pub struct StackSystem {
     to_be_stacked: bool,
     stack_delay: f32,
+    ignore_delay: bool,
+    reader_id : ReaderId<StackEvent>,
 }
 
 impl StackSystem {
-    pub fn new() -> Self {
+    pub fn new(world: &mut World) -> Self {
+        <Self as System<'_>>::SystemData::setup(world);
+        let reader_id = world.fetch_mut::<EventChannel<StackEvent>>().register_reader();
         Self {  
             to_be_stacked : false,
+            ignore_delay : false,
             stack_delay: STACKDELAY,
+            reader_id,
         }
     }
 }
@@ -67,11 +74,20 @@ impl<'s> System<'s> for StackSystem {
             return;
         }
 
+        for event in stack_event.read(&mut self.reader_id) {
+            match event {
+                StackEvent::IgnoreDelay => {
+                    self.ignore_delay = true;
+                },
+                _ => (),
+            }
+        } 
+
         let mut stack_confirm = false;
         if self.to_be_stacked {
             //Wait for certain times and 
             self.stack_delay -= time.delta_seconds();
-            if self.stack_delay <= 0.0 {
+            if self.stack_delay <= 0.0 || self.ignore_delay {
                 stack_confirm = true;
             } else if self.stack_delay <= KEYINTDELAY {
                 // This else if statement is to prevent from user to give input at the same time
@@ -124,6 +140,7 @@ impl<'s> System<'s> for StackSystem {
             // Reset variables
             self.stack_delay = STACKDELAY;
             self.to_be_stacked = false;
+            self.ignore_delay = false;
 
             // Now stack the blocks
             for entity in &handler.blocks {

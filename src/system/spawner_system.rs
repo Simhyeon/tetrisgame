@@ -35,8 +35,8 @@ impl<'s> System<'s> for SpawnerSystem{
 
             // Get Config 
             let block_index = 0; 
-            //let mut rng = thread_rng();
-            //let block_index = rng.gen_range(0, 7);
+            let mut rng = thread_rng();
+            let block_index = rng.gen_range(0, 7);
             let local_config = &block_config.blocks[block_index];
 
             // Transform setup

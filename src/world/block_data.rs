@@ -123,9 +123,10 @@ impl BlockData {
 
         if let None = self.data[col_index][row_index] {
             self.data[col_index][row_index].replace(entity);
+            println!("DEBUGGIN FOR COL_INDX{}", col_index);
             self.data_length[col_index] += 1;
         } else {
-            panic!("Wrong operation - block should be empty.");
+            panic!("Wrong operation - block should be empty. Or ican set this as game over which is quite clever I guess");
         } 
 
         Ok(())

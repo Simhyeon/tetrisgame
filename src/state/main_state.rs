@@ -27,7 +27,7 @@ impl<'a, 'b> SimpleState for MainState<'a, 'b>{
         dispatcher_builder.add(KeyInputSystem::new(world), "keyinput_system", &[]);
         // Backup for Stack system
         //dispatcher_builder.add(StackSystem::default(), "stack_system", &["gravity_system"]);
-        dispatcher_builder.add(StackSystem::new(), "stack_system", &["keyinput_system"]);
+        dispatcher_builder.add(StackSystem::new(world), "stack_system", &["keyinput_system"]);
         //dispatcher_builder.add(GravitySystem::new(world), "gravity_system", &["stack_system"]);
         dispatcher_builder.add(CollapseSystem::new(world), "collapse_system", &["stack_system"]);
         dispatcher_builder.add(SpawnerSystem::default(), "spawner_system", &["stack_system", "collapse_system"]);

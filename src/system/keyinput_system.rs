@@ -9,6 +9,7 @@ use amethyst::{
     shrev::{ReaderId, EventChannel},
 };
 
+use crate::system::stack_system::StackEvent;
 use crate::component::dyn_block::{DynamicBlock, DynBlockHandler, Rotation};
 use crate::component::stt_block::StaticBlock;
 use crate::config::{MovementBindingTypes, AxisBinding, ActionBinding};
@@ -17,7 +18,7 @@ use crate::utils;
 use std::f64::consts::PI;
 use std::cmp::Ordering;
 
-const INPUTDELAY : f32 = 0.07;
+const INPUTDELAY : f32 = 0.05;
 const EPSILON: f32 = 0.0001;
 
 #[derive(SystemDesc)]
@@ -95,6 +96,35 @@ impl KeyInputSystem {
             *shoot_value = false;
         }
     }
+
+    fn mutual_exclude(&mut self, horizontal_value: &mut f32, vertical_value: &mut f32, right_value: &mut bool, left_value: &mut bool, shoot_value: &mut bool) {
+        if *horizontal_value != 0.0 {
+            *vertical_value = 0.0;
+            *right_value = false;
+            *left_value = false;
+            *shoot_value = false;
+        } else if *vertical_value != 0.0{
+            *horizontal_value = 0.0;
+            *right_value = false;
+            *left_value = false;
+            *shoot_value = false;
+        } else if *right_value {
+            *vertical_value = 0.0;
+            *horizontal_value = 0.0;
+            *left_value = false;
+            *shoot_value = false;
+        } else if *left_value {
+            *vertical_value = 0.0;
+            *horizontal_value = 0.0;
+            *right_value = false;
+            *shoot_value = false;
+        } else if *shoot_value {
+            *vertical_value = 0.0;
+            *horizontal_value = 0.0;
+            *left_value = false;
+            *right_value = false;
+        }
+    }
 }
 
 enum NoInput{
@@ -116,10 +146,11 @@ impl<'s> System<'s> for KeyInputSystem {
         Read<'s, InputHandler<MovementBindingTypes>>,
         Read<'s, Time>,
         Read<'s, EventChannel<KeyInt>>,
+        Write<'s, EventChannel<StackEvent>>,
         ReadExpect<'s, BlockData>
     );
 
-    fn run(&mut self, (mut locals,blocks, stt, mut handler, input, time, read_event_channel, block_data): Self::SystemData) {
+    fn run(&mut self, (mut locals,blocks, stt, mut handler, input, time, read_event_channel, mut stack_event, block_data): Self::SystemData) {
         if handler.blocks.len() == 0 {
             return;
         }
@@ -140,13 +171,10 @@ impl<'s> System<'s> for KeyInputSystem {
         let mut rotate_left = input.action_is_down(&ActionBinding::RotateLeft).unwrap_or(false);
         let mut shoot = input.action_is_down(&ActionBinding::Shoot).unwrap_or(false);
 
-        // Up
+        // Sanitize input
         self.update_key_status(horizontal, vertical, rotate_right, rotate_left, shoot);
         self.delay_hold_input(&mut horizontal, &mut vertical, &mut rotate_right, &mut rotate_left, &mut shoot, time.delta_seconds());
-
-        if horizontal != 0.0 {
-            vertical = 0.0;
-        }
+        self.mutual_exclude(&mut horizontal, &mut vertical, &mut rotate_right, &mut rotate_left, &mut shoot);
 
         // Only get negative vertical value 
         // Player cannot move blocks upward.
@@ -239,57 +267,32 @@ impl<'s> System<'s> for KeyInputSystem {
 
         //// Currently emtpy code mostly deserved for debugging
         if shoot {
-            // get the most downward block
-            let mut down_most: Vec<(f32, f32)> = vec![];
-            for entity in handler.blocks.iter() {
-                let local_matrix = locals.get(*entity).unwrap().global_matrix();
-                println!("Comparing ({}, {})", local_matrix.m14, local_matrix.m24);
-                if down_most.len() == 0 {
-                    down_most.push((local_matrix.m14.round(), local_matrix.m24.round()));
-                } else if down_most[0].1 > local_matrix.m24.round() {
-                    down_most.clear();
-                    down_most.push((local_matrix.m14.round(), local_matrix.m24.round()));
-                } else if down_most[0].1 == local_matrix.m24.round() {
-                    down_most.push((local_matrix.m14.round(), local_matrix.m24.round()));
-                }
-            }
-
-
-            let mut top_most: (f32, f32) = (-1.0, -1.0);
-            let mut distance: f32 = 0.0;
-            for tuple in down_most.iter() {
+            let mut distance: f32 = HEIGHT;
+            let mut top_block : (f32, f32) = (-1.0, -1.0);
+            for block_entity in handler.blocks.iter() {
+                let top_matrix = locals.get(*block_entity).unwrap().global_matrix();
+                println!("({}, {})", top_matrix.m14, top_matrix.m24);
                 // Get top_most location of down_most columns
-                if let Some(entity) = block_data.get_top_block(tuple.0) {
-                    let matrix = locals.get(entity).unwrap().global_matrix();
-                    if top_most.0 == -1.0 {
-                        top_most = (matrix.m14.round(), matrix.m24.round());
-                    } else if top_most.1 < matrix.m24 {
-                        top_most = (matrix.m14.round(), matrix.m24.round());
+                if let Some(entity) = block_data.get_top_block(top_matrix.m14) {
+                    let down_matrix = locals.get(entity).unwrap().global_matrix();
+                    if top_matrix.m24 - down_matrix.m24 <= distance {
+                        distance = (top_matrix.m24 - down_matrix.m24 - 45.0).round();
+                        top_block = (top_matrix.m14.round(), top_matrix.m24.round());
                     }
-                    distance = tuple.1 - top_most.1;
+
                 } else {
-                    if top_most.0 == -1.0 {
-                        top_most = (tuple.0, 0.0);
-                        distance = tuple.1;
+                    if top_matrix.m24 - 45.0 <= distance {
+                        distance = top_matrix.m24 - 45.0;
+                        top_block = (top_matrix.m14.round(), top_matrix.m24.round());
                     }
                 }
             }
 
-
-            let parent_transform = locals.get(handler.parent.unwrap()).unwrap();
-            println!("Down Most ----> {:?}", down_most);
-            println!("Top Most  ----> {:?}", top_most);
-            println!("Origin    ----> ({}, {})", parent_transform.global_matrix().m14, parent_transform.global_matrix().m24);
-            println!("Distance1 ----> {:?}", distance);
-            distance -= parent_transform.global_matrix().m24 - down_most[0].1;
-            // Some hardcoded fix for strange problem I guess?
-            if parent_transform.global_matrix().m24.round() 
-                == down_most[0].1.round() {
-                distance -= 45.0;
-            }
-            println!("Distance2 ----> {:?}", distance);
+            println!("Distance is {}", (distance / 45.0).round());
+            println!("Top Block is {:?}", top_block);
 
             locals.get_mut(handler.parent.unwrap()).unwrap().prepend_translation_y(-distance);
+            stack_event.single_write(StackEvent::IgnoreDelay);
         }
 
         // If rotate button was given
