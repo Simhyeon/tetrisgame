@@ -1,5 +1,5 @@
 use amethyst::{
-    core::transform::Transform,
+    core::transform::{Transform, Parent},
     derive::SystemDesc,
     ecs::prelude::{Join, Read, ReadStorage, System, SystemData, World, WriteStorage, WriteExpect, LazyUpdate, Write, ReadExpect, Entity, Entities},
     shrev::{ReaderId, EventChannel},
@@ -8,6 +8,8 @@ use std::collections::HashMap;
 
 use crate::component::stt_block::StaticBlock;
 use crate::system::stack_system::StackEvent;
+use crate::world::block_data::BlockData;
+use crate::utils;
 
 use std::cmp::Ordering;
 
@@ -41,47 +43,48 @@ impl Container {
 impl<'s> System<'s> for CollapseSystem {
     type SystemData = (
         Entities<'s>,
-        ReadStorage<'s, Transform>,
+        WriteStorage<'s, Transform>,
+        ReadStorage<'s, Parent>,
         ReadStorage<'s, StaticBlock>,
         Read<'s, EventChannel<StackEvent>>,
+        WriteExpect<'s, BlockData>
     );
 
-    fn run(&mut self, (entities, locals, stt_blocks, event_channel) : Self::SystemData) {
+    fn run(&mut self, (entities, mut locals, parents, stt_blocks, event_channel, mut block_data) : Self::SystemData) {
         for event in event_channel.read(&mut self.reader_id) {
             if let StackEvent::Stacked = event {
-                // Stack Event called
+                // Collapse logic
+                'outer : loop {
+                    'inner : for index in 0..20 {
+                        let col_index = (index +1) as f32 * 45.0;
+                        if block_data.check_full(col_index)  {
 
-                let mut vector: Vec<Container> = Vec::new();
-                for (entity ,local, _) in (&entities, &locals, &stt_blocks).join() {
-                    vector.push(Container::new(local.global_matrix().m24.round(), entity));
-                }
-
-                // Debug Code
-                //println!("Block size is : {}", vector.len());
-
-                // Sort vector array
-                vector.sort_unstable_by(|a,b| a.height.partial_cmp(&b.height).unwrap());
-
-                // Check Count
-                let mut prior: f32 = -1.0; // Inital value is -1
-                for counter in 0..vector.len() {
-                    if prior.partial_cmp(&vector[counter].height).unwrap() != Ordering::Equal {
-                        // Update index
-                        prior = vector[counter].height;
-                        //println!("Found new transform : {}", prior);
-
-                        // Find all occurence
-                        let new_vec: Vec<&Container> = vector.iter().filter(|&x| x.height == prior).collect();
-
-                        // If line is full delte all entities
-                        if new_vec.len() == 10 { // Hard coded for now TODO SHould be soft coded
-                            println!("Full line collapsing which is {}", prior);
-                            for item in new_vec {
-                                entities.delete(item.id).expect("ERR");
+                            // Delete entity values that entity vector contains not entity itself
+                            // acutally entity itsefl is not a value rather an indicator.
+                            let block_entities = block_data.get_row(col_index);
+                            for entity in block_entities {
+                                // Unwrap should not fail because data_length is full.
+                                entities.delete(entity.unwrap()).expect("Failed to delete entity");
                             }
+
+                            // Remove collaped row and move all uppers rows down by 1 row.
+                            // And get merged entity vector and use the vector to really move value
+                            // downward
+                            let to_be_moved = block_data.remove_lows(col_index);
+                            for item in to_be_moved {
+                                if let Some(entity) = item {
+                                    let parent_entity = parents.get(entity).unwrap().entity;
+                                    let (x, y, z) = utils::get_y_absolute_move(locals.get(parent_entity).unwrap().euler_angles(), -45.0);
+                                    locals.get_mut(entity).unwrap().append_translation_xyz(x, y, z);
+                                }
+                            }
+                            // Break out of "For index in 0..20 loop" which is inner loop
+                            // But stay in outer loop to check from start
+                            break 'inner;
                         }
-                    } else {
-                        continue;
+
+                        // Break out of outer loop if no col_index is detected;
+                        break 'outer;
                     }
                 }
             }

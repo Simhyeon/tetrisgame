@@ -16,9 +16,11 @@ mod system;
 mod component;
 mod config;
 mod utils;
+mod world;
 
 use crate::state::{ loading_state::LoadingState, };
 use crate::config::{MovementBindingTypes, BlocksConfig};
+use crate::world::block_data::BlockData;
 
 fn main() -> amethyst::Result<()> {
 
@@ -59,7 +61,10 @@ fn main() -> amethyst::Result<()> {
 
     let assets_dir = app_root.join("assets");
     // with_resource(blocks_config).
-    let mut game = Application::build(assets_dir, LoadingState::default())?.with_resource(blocks_config).build(game_data)?;
+    let mut game = Application::build(assets_dir, LoadingState::default())?
+        .with_resource(blocks_config)
+        .with_resource(BlockData::new())
+        .build(game_data)?;
     //let mut game = Application::new(assets_dir, LoadingState::default(), game_data)?;
     game.run();
 

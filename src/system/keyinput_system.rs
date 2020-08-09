@@ -1,10 +1,10 @@
 use amethyst::{
 //    prelude::*,
     core::timing::Time,
-    core::transform::Transform,
+    core::transform::{Transform, Parent},
 //    core::SystemDesc,
     derive::SystemDesc,
-    ecs::prelude::{WriteExpect, System, ReadStorage, Join, Read, SystemData, WriteStorage, World, Write},
+    ecs::prelude::{WriteExpect, System, ReadStorage, Join, Read, SystemData, WriteStorage, World, Write, ReadExpect},
     input::{InputHandler},
     shrev::{ReaderId, EventChannel},
 };
@@ -12,6 +12,8 @@ use amethyst::{
 use crate::component::dyn_block::{DynamicBlock, DynBlockHandler, Rotation};
 use crate::component::stt_block::StaticBlock;
 use crate::config::{MovementBindingTypes, AxisBinding, ActionBinding};
+use crate::world::block_data::BlockData;
+use crate::utils;
 use std::f64::consts::PI;
 use std::cmp::Ordering;
 
@@ -109,9 +111,10 @@ impl<'s> System<'s> for KeyInputSystem {
         Read<'s, InputHandler<MovementBindingTypes>>,
         Read<'s, Time>,
         Read<'s, EventChannel<KeyInt>>,
+        ReadExpect<'s, BlockData>
     );
 
-    fn run(&mut self, (mut locals ,blocks, stt, mut handler, input, time, read_event_channel): Self::SystemData) {
+    fn run(&mut self, (mut locals,blocks, stt, mut handler, input, time, read_event_channel, block_data): Self::SystemData) {
         if handler.blocks.len() == 0 {
             return;
         }
@@ -119,7 +122,6 @@ impl<'s> System<'s> for KeyInputSystem {
         for event in read_event_channel.read(&mut self.reader_id) {
             match event {
                 KeyInt::Stack => {
-                    println!("KEY INTERRUPTED");
                     return;
                 }
                 _ => ()
@@ -230,10 +232,24 @@ impl<'s> System<'s> for KeyInputSystem {
         }
 
 
-        //// Currently emtpy code
-        //if shoot {
+        //// Currently emtpy code mostly deserved for debugging
+        if shoot {
+            //println!("PRINTING");
+            //println!("END -- PRINTING");
+            
+            //println!("{:?}", locals.get(handler.parent.unwrap()).unwrap().euler_angles());
+            println!("{}", *block_data);
+            //for (local, _block, _) in ( &mut locals, &blocks ,&stt).join() {
+                //println!("{}", local.global_matrix());
+            //}
 
-        //}
+            //let array = block_data.get_row(45.0);
+            //for item in array {
+                //if let Some(value) = item {
+                    //println!("{}", locals.get(value).unwrap().global_matrix());
+                //}
+            //}
+        }
 
         // If rotate button was given
         if rotate_right || rotate_left {
@@ -349,7 +365,6 @@ impl<'s> System<'s> for KeyInputSystem {
 
             //Rotate parent if not prevented from prior logics
             if !block_rotate {
-                println!("--Executing Rotation--");
                 if rotate_right {
                     handler.rotate_handler(Rotation::Right);
                     locals.get_mut(handler.parent.unwrap()).unwrap().prepend_rotation_z_axis((PI * 0.5) as f32);
