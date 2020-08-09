@@ -18,20 +18,23 @@ use crate::utils;
 use std::f64::consts::PI;
 use std::cmp::Ordering;
 
-const INPUTDELAY : f32 = 0.05;
+const HOR_DELAY : f32 = 0.1;
+const VER_DELAY : f32 = 0.07;
 const EPSILON: f32 = 0.0001;
 
 #[derive(SystemDesc)]
 pub struct KeyInputSystem {
     pub key_interval: Option<f32>,
     noinput: NoInput,
+    key_int : bool,
     key_status: KeyStatus,
-    axis_delay: f32,
+    axis_delay: (f32,f32),
     reader_id : ReaderId<KeyInt>,
 }
 
 pub enum KeyInt {
     Stack,
+    None,
 }
 
 // If same key press was given then set that input as hold
@@ -49,7 +52,8 @@ impl KeyInputSystem {
             key_interval: None,
             noinput: NoInput::None,
             key_status : KeyStatus::default(),
-            axis_delay : INPUTDELAY,
+            key_int : false,
+            axis_delay : (HOR_DELAY, VER_DELAY),
             reader_id,
         }
     }
@@ -69,19 +73,19 @@ impl KeyInputSystem {
 
         // Disable for axis input
         if let KeyPressType::Hold = self.key_status.horizontal {
-            if self.axis_delay >= 0.0 {
+            if self.axis_delay.0 >= 0.0 {
                 *horizontal_value = 0.0;
-                self.axis_delay -= dtime;
+                self.axis_delay.0 -= dtime;
             } else {
-                self.axis_delay = INPUTDELAY;
+                self.axis_delay.0 = HOR_DELAY;
             }
         }
         if let KeyPressType::Hold = self.key_status.vertical {
-            if self.axis_delay >= 0.0 {
+            if self.axis_delay.1 >= 0.0 {
                 *vertical_value = 0.0;
-                self.axis_delay -= dtime;
+                self.axis_delay.1 -= dtime;
             } else {
-                self.axis_delay = INPUTDELAY;
+                self.axis_delay.1 = VER_DELAY;
             }
         }
 
@@ -145,23 +149,31 @@ impl<'s> System<'s> for KeyInputSystem {
         WriteExpect<'s, DynBlockHandler>,
         Read<'s, InputHandler<MovementBindingTypes>>,
         Read<'s, Time>,
-        Read<'s, EventChannel<KeyInt>>,
+        Write<'s, EventChannel<KeyInt>>,
         Write<'s, EventChannel<StackEvent>>,
         ReadExpect<'s, BlockData>
     );
 
-    fn run(&mut self, (mut locals,blocks, stt, mut handler, input, time, read_event_channel, mut stack_event, block_data): Self::SystemData) {
+    fn run(&mut self, (mut locals,blocks, stt, mut handler, input, time, mut key_event_channel, mut stack_event, block_data): Self::SystemData) {
         if handler.blocks.len() == 0 {
             return;
         }
 
-        for event in read_event_channel.read(&mut self.reader_id) {
+        for event in key_event_channel.read(&mut self.reader_id) {
             match event {
                 KeyInt::Stack => {
+                    self.key_int = true;
                     return;
+                }
+                KeyInt::None => {
+                    self.key_int = false;
                 }
                 _ => ()
             }
+        }
+
+        if self.key_int {
+            return;
         }
 
         // get input value from key input
@@ -170,6 +182,7 @@ impl<'s> System<'s> for KeyInputSystem {
         let mut rotate_right = input.action_is_down(&ActionBinding::RotateRight).unwrap_or(false);
         let mut rotate_left = input.action_is_down(&ActionBinding::RotateLeft).unwrap_or(false);
         let mut shoot = input.action_is_down(&ActionBinding::Shoot).unwrap_or(false);
+        let mut debug = input.action_is_down(&ActionBinding::Debug).unwrap_or(false);
 
         // Sanitize input
         self.update_key_status(horizontal, vertical, rotate_right, rotate_left, shoot);
@@ -265,6 +278,10 @@ impl<'s> System<'s> for KeyInputSystem {
         }
 
 
+        if debug {
+            println!("{}", *block_data);
+        }
+
         //// Currently emtpy code mostly deserved for debugging
         if shoot {
             let mut distance: f32 = HEIGHT;
@@ -293,6 +310,8 @@ impl<'s> System<'s> for KeyInputSystem {
 
             locals.get_mut(handler.parent.unwrap()).unwrap().prepend_translation_y(-distance);
             stack_event.single_write(StackEvent::IgnoreDelay);
+            key_event_channel.single_write(KeyInt::Stack);
+            return;
         }
 
         // If rotate button was given

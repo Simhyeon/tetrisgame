@@ -106,7 +106,7 @@ impl<'s> System<'s> for StackSystem {
         let mut to_free : bool = false;
         'outer :for (dyn_local, _, ()) in (&locals, &dyn_blocks, !&stt_blocks).join() {
             if dyn_local.global_matrix().m24.round() == 45.0 { // this is when to be stacked
-                if !self.to_be_stacked {
+                if !self.to_be_stacked || !self.ignore_delay{
                     self.to_be_stacked = true;
                     println!("TOBESTACKED");
                     stack_event.single_write(StackEvent::ToBeStacked);
@@ -118,7 +118,7 @@ impl<'s> System<'s> for StackSystem {
             for (local, _) in (&locals, &stt_blocks).join() {
                 if local.global_matrix().m24.round() == dyn_local.global_matrix().m24.round() - 45.0 
                     && local.global_matrix().m14.round() == dyn_local.global_matrix().m14.round() {
-                        if !self.to_be_stacked {
+                        if !self.to_be_stacked || !self.ignore_delay{
                             self.to_be_stacked = true;
                             println!("TOBESTACKED");
                             stack_event.single_write(StackEvent::ToBeStacked);
@@ -157,6 +157,7 @@ impl<'s> System<'s> for StackSystem {
             }
             handler.blocks.clear();
             stack_event.single_write(StackEvent::Stacked);
+            write_key_event.single_write(KeyInt::None);
             println!("Stacked!");
             return;
         }

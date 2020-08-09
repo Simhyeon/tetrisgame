@@ -5,6 +5,7 @@
     },
 	actions: {
 		Shoot: [[Key(Space)]],
+		Debug: [[Key(R)]],
 		RotateRight: [[Key(D)]],
 		RotateLeft: [[Key(A)]],
 	},

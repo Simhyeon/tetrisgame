@@ -54,9 +54,11 @@ impl<'s> System<'s> for CollapseSystem {
         for event in event_channel.read(&mut self.reader_id) {
             if let StackEvent::Stacked = event {
                 // Collapse logic
+                println!("Recieved stack event");
                 'outer : loop {
                     'inner : for index in 0..20 {
                         let col_index = (index +1) as f32 * 45.0;
+                        println!("Checking fullness of index : {}  restul : {}", index , block_data.check_full(col_index));
                         if block_data.check_full(col_index)  {
 
                             // Delete entity values that entity vector contains not entity itself
@@ -80,12 +82,12 @@ impl<'s> System<'s> for CollapseSystem {
                             }
                             // Break out of "For index in 0..20 loop" which is inner loop
                             // But stay in outer loop to check from start
-                            break 'inner;
+                            continue 'outer;
                         }
-
-                        // Break out of outer loop if no col_index is detected;
-                        break 'outer;
                     }
+                    println!("Breaking outer Loop");
+                    // Break out of outer loop if no col_index is detected;
+                    break 'outer;
                 }
             }
         }
