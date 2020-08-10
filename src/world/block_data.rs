@@ -129,16 +129,9 @@ impl BlockData {
             self.data[col_index][row_index].replace(entity);
             self.data_length[col_index] += 1;
         } else {
-            println!{"--------ERR----------"}
-            println!{"--------ERR----------"}
-            println!{"--------ERR----------"}
             println!("Already existing in ... ");
             println!(" X :{} Y : {}", row_index, col_index);
-            println!{"--------ERR----------"}
-            println!{"--------ERR----------"}
-            println!{"--------ERR----------"}
-            //return Err("Game Over || Hardly detected problem occured.");
-            //panic!("Wrong operation - block should be empty. Or ican set this as game over which is quite clever I guess");
+            return Err("Game Over ... OR Hardly detected problem occured.");
         } 
 
         Ok(())
