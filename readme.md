@@ -4,11 +4,11 @@ Executable binary is in release section. While compilation would also work unles
 
 ### Caution
 
-This game is quite buggy. I tried to find some solutions. But I didn't want to spend more time in amethyst engine.
+This game is really buggy. I tried to find some solutions. But I didn't want to spend more time in amethyst engine.
 
-So I just finished the project. While 80% of the time game will just work, but may cuase error and will show game over screen. 
+So I just finished the project. While 80% of the "Operation" will just work, but would cuase error and will show game over screen at the end, sadly. 
 
-At worse it will crash.
+At worst it will crash without any game over screen.
 
 ### About my Learning
 
