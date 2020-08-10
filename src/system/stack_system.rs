@@ -27,7 +27,7 @@ pub enum StackEvent {
 pub struct StackSystem {
     to_be_stacked: bool,
     stack_delay: f32,
-    ignore_delay: bool,
+    no_delay: bool,
     reader_id : ReaderId<StackEvent>,
 }
 
@@ -37,8 +37,8 @@ impl StackSystem {
         let reader_id = world.fetch_mut::<EventChannel<StackEvent>>().register_reader();
         Self {  
             to_be_stacked : false,
-            ignore_delay : false,
             stack_delay: STACKDELAY,
+            no_delay: false,
             reader_id,
         }
     }
@@ -85,20 +85,25 @@ impl<'s> System<'s> for StackSystem {
             return;
         }
 
+        let mut stack_confirm = false;
+
         for event in stack_event.read(&mut self.reader_id) {
             match event {
                 StackEvent::IgnoreDelay => {
-                    self.ignore_delay = true;
+                    println!("----------");
+                    println!("IGNOREING DELAY");
+                    println!("----------");
+                    self.no_delay = true;
+                    //self.to_be_stacked = false;
                 },
                 _ => (),
             }
         } 
 
-        let mut stack_confirm = false;
-        if self.to_be_stacked {
+        if self.to_be_stacked && !stack_confirm {
             //Wait for certain times and 
             self.stack_delay -= time.delta_seconds();
-            if self.stack_delay <= 0.0 || self.ignore_delay {
+            if self.stack_delay <= 0.0 || self.no_delay{
                 stack_confirm = true;
             } else if self.stack_delay <= KEYINTDELAY {
                 // This else if statement is to prevent from user to give input at the same time
@@ -114,56 +119,50 @@ impl<'s> System<'s> for StackSystem {
             }
         }
 
-        let mut to_free : bool = false;
-        'outer :for (dyn_local, _, ()) in (&locals, &dyn_blocks, !&stt_blocks).join() {
-            if dyn_local.global_matrix().m24.round() == 45.0 { // this is when to be stacked
-                if !self.to_be_stacked || !self.ignore_delay{
-                    self.to_be_stacked = true;
-                    println!("TOBESTACKED");
-                    stack_event.single_write(StackEvent::ToBeStacked);
-                }
-                to_free = false;
-                break;
-            }
-
-            for (local, _) in (&locals, &stt_blocks).join() {
-                if local.global_matrix().m24.round() == dyn_local.global_matrix().m24.round() - 45.0 
-                    && local.global_matrix().m14.round() == dyn_local.global_matrix().m14.round() {
-                        if !self.to_be_stacked || !self.ignore_delay{
-                            self.to_be_stacked = true;
-                            println!("TOBESTACKED");
-                            stack_event.single_write(StackEvent::ToBeStacked);
-                        }
-                        to_free = false;
-                        break 'outer;
+        let mut to_free : bool = true;
+        if !stack_confirm {
+            'outer :for (dyn_local, _, ()) in (&locals, &dyn_blocks, !&stt_blocks).join() {
+                if dyn_local.global_matrix().m24.round() == 45.0 { // this is when to be stacked
+                    if !self.to_be_stacked {
+                        self.to_be_stacked = true;
+                        println!("TOBESTACKED for walls");
+                        stack_event.single_write(StackEvent::ToBeStacked);
                     }
+                    to_free = false;
+                    break 'outer;
+                }
+
+                for (local, _) in (&locals, &stt_blocks).join() {
+                    if local.global_matrix().m24.round() == dyn_local.global_matrix().m24.round() - 45.0 
+                        && local.global_matrix().m14.round() == dyn_local.global_matrix().m14.round() {
+                            if !self.to_be_stacked {
+                                self.to_be_stacked = true;
+                                println!("TOBESTACKED for blocks");
+                                stack_event.single_write(StackEvent::ToBeStacked);
+                            }
+                            to_free = false;
+                            break 'outer;
+                        }
+                }
             }
+        } else {
 
-            // During Looping no stack conditions has been detected;
-            // which means condifion for freeing gravity system has been met
-            to_free = true;
-        }
+            // TODO Currently parent entity is not removed while entity is very resource light and
+            // doesn't get calculated at all so this is not that bad
+            // However memory is getting leaked definitely
 
-        // TODO Currently parent entity is not removed while entity is very resource light and
-        // doesn't get calculated at all so this is not that bad
-        // However memory is getting leaked definitely
-        if stack_confirm {
             // Reset variables
             self.stack_delay = STACKDELAY;
             self.to_be_stacked = false;
-            self.ignore_delay = false;
+            self.no_delay = false;
 
             // Now stack the blocks
             for entity in &handler.blocks {
 
-                // Failed to delete parent.. sad
-                //let abs = locals.get(*entity).unwrap().global_matrix().clone();
-                //locals.get_mut(*entity).unwrap().set_translation_xyz(abs.m14.round(), abs.m24.round(), 0.0);
-                //updater.remove::<Parent>(*entity);
-
                 stt_blocks.insert(*entity, StaticBlock).expect("ERR");
                 // Add block to block_data
                 let matrix_m = locals.get(*entity).unwrap().global_matrix();
+                println!(" Stacking with X :{}, Y : {}", matrix_m.m14.round(), matrix_m.m24.round());
                 match block_data.add_block(matrix_m.m14.round(), matrix_m.m24.round(), entity.clone()) {
                     Ok(_) => (),
                     Err(_) => {
@@ -179,7 +178,6 @@ impl<'s> System<'s> for StackSystem {
             stack_event.single_write(StackEvent::Stacked);
             write_key_event.single_write(KeyInt::None);
             println!("Stacked!");
-            return;
         }
 
         // if gravtiy free condition has been met and also 

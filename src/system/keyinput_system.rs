@@ -162,10 +162,12 @@ impl<'s> System<'s> for KeyInputSystem {
         for event in key_event_channel.read(&mut self.reader_id) {
             match event {
                 KeyInt::Stack => {
+                    println!("Key Input :::: STACKED");
                     self.key_int = true;
                     return;
                 }
                 KeyInt::None => {
+                    println!("Key Input :::: RESET");
                     self.key_int = false;
                 }
                 _ => ()
@@ -284,6 +286,8 @@ impl<'s> System<'s> for KeyInputSystem {
 
         //// Currently emtpy code mostly deserved for debugging
         if shoot {
+            println!("{}", *block_data);
+
             let mut distance: f32 = HEIGHT;
             let mut top_block : (f32, f32) = (-1.0, -1.0);
             for block_entity in handler.blocks.iter() {
@@ -310,7 +314,7 @@ impl<'s> System<'s> for KeyInputSystem {
 
             locals.get_mut(handler.parent.unwrap()).unwrap().prepend_translation_y(-distance);
             stack_event.single_write(StackEvent::IgnoreDelay);
-            key_event_channel.single_write(KeyInt::Stack);
+            //key_event_channel.single_write(KeyInt::Stack);
             return;
         }
 

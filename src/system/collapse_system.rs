@@ -61,7 +61,7 @@ impl<'s> System<'s> for CollapseSystem {
                 'outer : loop {
                     'inner : for index in 0..20 {
                         let col_index = (index +1) as f32 * 45.0;
-                        println!("Checking fullness of index : {}  restul : {}", index , block_data.check_full(col_index));
+                        //println!("Checking fullness of index : {}  restul : {}", index , block_data.check_full(col_index));
                         if block_data.check_full(col_index)  {
 
                             // Delete entity values that entity vector contains not entity itself

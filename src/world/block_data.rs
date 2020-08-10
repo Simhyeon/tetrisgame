@@ -97,13 +97,14 @@ impl BlockData {
             // which is technically same as some kind of bubble sort
             // Is "Cloning" a good idea? I dont' know (Mabye not good)
             // but it works. TODO check this line if you want efficient codes
+            self.data[count-1].clear();
             self.data[count-1] = self.data[count].clone();
             self.data_length[count-1] = self.data_length[count];
             upper_vec.extend(&self.data[count]);
         }
         // Clear top most items which is not cleared by moving items
         for item in self.data[BLOCK_HEIGHT-1].iter_mut() {
-            *item = None;
+            item.take();
         }
         self.data_length[BLOCK_HEIGHT-1] = 0;
 
@@ -128,7 +129,15 @@ impl BlockData {
             self.data[col_index][row_index].replace(entity);
             self.data_length[col_index] += 1;
         } else {
-            return Err("Game Over || Hardly detected problem occured.");
+            println!{"--------ERR----------"}
+            println!{"--------ERR----------"}
+            println!{"--------ERR----------"}
+            println!("Already existing in ... ");
+            println!(" X :{} Y : {}", row_index, col_index);
+            println!{"--------ERR----------"}
+            println!{"--------ERR----------"}
+            println!{"--------ERR----------"}
+            //return Err("Game Over || Hardly detected problem occured.");
             //panic!("Wrong operation - block should be empty. Or ican set this as game over which is quite clever I guess");
         } 
 

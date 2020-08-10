@@ -47,11 +47,13 @@ impl<'s> System<'s> for GravitySystem{
         for event in event_channel.read(&mut self.reader_id) {
             match event {
                 StackEvent::ToBeStacked => {
+                    println!("Stop Gravity");
                     self.stop_gravity = true;
                     self.time_delay = 0.0; // Also reset time dealy for continous ingegration? I guess
                     return;
                 }
                 StackEvent::Stacked | StackEvent::Free => {
+                    println!("Use Gravity again");
                     self.stop_gravity = false;
                     break;
                 }
