@@ -5,10 +5,7 @@ use amethyst::{
     renderer::{Camera, ImageFormat, SpriteSheet, SpriteSheetFormat, Texture, SpriteRender},
     prelude::*,
     utils::application_root_dir,
-    ecs::{World},
-    ui::{
-        Anchor, RenderUi, UiBundle, UiButtonBuilder, UiCreator, UiEvent, UiFinder, UiImage, UiText,
-    },
+    ui::{ Anchor, UiButtonBuilder, },
 };
 
 use std::{thread, time};
@@ -53,13 +50,7 @@ impl SimpleState for LoadingState{
             .with(transform, &mut world.write_storage())
             .build();
 
-        //UiLabelBuilder::<u32>::new("000000".to_string())
-            //.with_font_size(10.0)
-            //.with_position(150.0, 150.0)
-            //.with_anchor(Anchor::TopMiddle)
-            //.build_from_world(&world);
-
-        let (_, ui_button) = UiButtonBuilder::<(), u32>::new("000000".to_string())
+        UiButtonBuilder::<(), u32>::new("000000".to_string())
             .with_font_size(30.0)
             .with_position(-75.0, -75.0)
             .with_size(64.0 * 6.0, 64.0)
@@ -85,7 +76,7 @@ impl SimpleState for LoadingState{
         world.insert(DynBlockHandler::default());
     }
 
-    fn update(&mut self, _data: &mut StateData<'_, GameData<'_, '_>>) ->SimpleTrans{
+    fn update(&mut self, data: &mut StateData<'_, GameData<'_, '_>>) ->SimpleTrans{
         if self.sprite_sheet_store != None{ 
             thread::sleep(time::Duration::from_millis(500));
             println!("Load Complete");

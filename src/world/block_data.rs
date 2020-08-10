@@ -128,7 +128,8 @@ impl BlockData {
             self.data[col_index][row_index].replace(entity);
             self.data_length[col_index] += 1;
         } else {
-            panic!("Wrong operation - block should be empty. Or ican set this as game over which is quite clever I guess");
+            return Err("Game Over || Hardly detected problem occured.");
+            //panic!("Wrong operation - block should be empty. Or ican set this as game over which is quite clever I guess");
         } 
 
         Ok(())

@@ -8,6 +8,7 @@ use amethyst::{
         types::DefaultBackend,
         RenderingBundle,
     },
+    shrev::EventChannel,
     input::{InputBundle},
     ui::{UiBundle, RenderUi},
 };
@@ -23,6 +24,7 @@ mod events;
 use crate::state::{ loading_state::LoadingState, };
 use crate::config::{MovementBindingTypes, BlocksConfig, PaneConfig};
 use crate::world::block_data::BlockData;
+use crate::events::GameEvent;
 
 fn main() -> amethyst::Result<()> {
 
@@ -65,6 +67,7 @@ fn main() -> amethyst::Result<()> {
     let mut game = Application::build(assets_dir, LoadingState::default())?
         .with_resource(blocks_config)
         .with_resource(BlockData::new())
+        .with_resource(GameEvent::Normal)
         .build(game_data)?;
     //let mut game = Application::new(assets_dir, LoadingState::default(), game_data)?;
     game.run();

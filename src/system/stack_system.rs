@@ -1,6 +1,6 @@
 use amethyst::{
     core::timing::Time,
-    core::transform::{Transform,Parent},
+    core::transform::{Transform},
     derive::SystemDesc,
     ecs::prelude::{Join, System, SystemData, WriteStorage, ReadStorage, WriteExpect, Write, Read, World, LazyUpdate},
     shrev::{EventChannel, ReaderId},
@@ -10,6 +10,7 @@ use crate::component::dyn_block::{DynamicBlock, DynBlockHandler};
 use crate::component::stt_block::StaticBlock;
 use crate::system::keyinput_system::KeyInt;
 use crate::world::block_data::BlockData;
+use crate::events::GameEvent;
 
 const STACKDELAY: f32 = 0.3;
 const KEYINTDELAY: f32 = 0.05;
@@ -64,12 +65,22 @@ impl<'s> System<'s> for StackSystem {
         Write<'s, EventChannel<KeyInt>>,
         Read<'s, Time>,
         WriteExpect<'s, BlockData>,
+        WriteExpect<'s, GameEvent>,
         Read<'s, LazyUpdate>,
     );
 
     // TODO Change to_be_stacked value as some kind of trigger
     // TODO THIS CODE IS SHIT FUCK ME
-    fn run(&mut self, (mut handler, dyn_blocks, mut stt_blocks, mut locals, mut stack_event, mut write_key_event, time, mut block_data, updater): Self::SystemData) {
+    fn run(&mut self, (mut handler, dyn_blocks, 
+            mut stt_blocks, 
+            mut locals, 
+            mut stack_event, 
+            mut write_key_event, 
+            time, 
+            mut block_data, 
+            mut game_event,
+            updater
+    ): Self::SystemData) {
         if handler.blocks.len() == 0 {
             return;
         }
@@ -153,7 +164,16 @@ impl<'s> System<'s> for StackSystem {
                 stt_blocks.insert(*entity, StaticBlock).expect("ERR");
                 // Add block to block_data
                 let matrix_m = locals.get(*entity).unwrap().global_matrix();
-                block_data.add_block(matrix_m.m14.round(), matrix_m.m24.round(), entity.clone()).expect("Something happend and mostly underflow.");
+                match block_data.add_block(matrix_m.m14.round(), matrix_m.m24.round(), entity.clone()) {
+                    Ok(_) => (),
+                    Err(_) => {
+                        // This is for debuggin purpose since adding is not yet compelte... in
+                        // terms of bug free.
+                        println!("{}", *block_data);
+                        // Send game over event channel
+                        *game_event = GameEvent::GameOver;
+                    }
+                }
             }
             handler.blocks.clear();
             stack_event.single_write(StackEvent::Stacked);

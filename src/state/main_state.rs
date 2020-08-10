@@ -1,6 +1,6 @@
 use amethyst::{
     prelude::*,
-    ecs::{Dispatcher, DispatcherBuilder},
+    ecs::{Dispatcher, DispatcherBuilder, World},
     core::ArcThreadPool,
 };
 
@@ -12,7 +12,8 @@ use crate::system::{
     collapse_system::CollapseSystem,
 };
 
-use crate::config::BlocksConfig;
+use crate::events::GameEvent;
+use crate::state::game_over::GameOverState;
 
 #[derive(Default)]
 pub struct MainState<'a, 'b>{
@@ -22,13 +23,12 @@ pub struct MainState<'a, 'b>{
 impl<'a, 'b> SimpleState for MainState<'a, 'b>{
     fn on_start(&mut self, mut data : StateData<'_, GameData<'_, '_>>) {
         let world = &mut data.world;
+        //self.reader_id = Some(world.fetch_mut::<EventChannel<GameState>>().register_reader());
 
         let mut dispatcher_builder = DispatcherBuilder::new();
         dispatcher_builder.add(KeyInputSystem::new(world), "keyinput_system", &[]);
-        // Backup for Stack system
-        //dispatcher_builder.add(StackSystem::default(), "stack_system", &["gravity_system"]);
         dispatcher_builder.add(StackSystem::new(world), "stack_system", &["keyinput_system"]);
-        //dispatcher_builder.add(GravitySystem::new(world), "gravity_system", &["stack_system"]);
+        dispatcher_builder.add(GravitySystem::new(world), "gravity_system", &["stack_system"]);
         dispatcher_builder.add(CollapseSystem::new(world), "collapse_system", &["stack_system"]);
         dispatcher_builder.add(SpawnerSystem::default(), "spawner_system", &["stack_system", "collapse_system"]);
 
@@ -42,9 +42,17 @@ impl<'a, 'b> SimpleState for MainState<'a, 'b>{
     }
 
     fn update(&mut self, data: &mut StateData<'_, GameData<'_, '_>>) -> SimpleTrans {
+
+        let world = &data.world;
+
+        if let GameEvent::GameOver = *world.read_resource::<GameEvent>() {
+            return Trans::Replace(Box::new(GameOverState::default()));
+        }
+
         if let Some(dispatcher) = self.dispatcher.as_mut() {
             dispatcher.dispatch(&data.world);
         }
+
         Trans::None
     }
 }
