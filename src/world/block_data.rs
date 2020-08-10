@@ -11,7 +11,7 @@ const BLOCK_WIDTH: usize = 10;
 
 pub struct BlockData {
     data_length: Vec<usize>,
-    data: Vec<Vec<Option<Entity>>>,
+    pub data: Vec<Vec<Option<Entity>>>, // Debug for pub
 }
 
 impl Display for BlockData {
@@ -29,9 +29,9 @@ impl Display for BlockData {
             }
             write!(f, "\n")?;
         }
-        for (index, item) in self.data_length.iter().rev().enumerate() {
-            write!(f, "{}th\t->\t{}\n", index, item)?;
-        }
+        //for (index, item) in self.data_length.iter().rev().enumerate() {
+            //write!(f, "{}th\t->\t{}\n", index, item)?;
+        //}
         write!(f, "")
     }
 }
@@ -82,6 +82,7 @@ impl BlockData {
         let mut ent: Option<Entity> = None;
         for col in 0..BLOCK_HEIGHT {
             if let Some(entity) = self.data[col][index] {
+                println!("Calculaing get_top_block X: {}, y: {}", index, col);
                 ent.replace(entity);
             }
         }
@@ -125,6 +126,11 @@ impl BlockData {
         let col_index = Self::get_col_index_from_m24(matrix_m24);
         let row_index = Self::get_row_index_from_m14(matrix_m14);
 
+        println!("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+        println!("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+        println!("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
+        println!("<ADD BLOCK>");
+        println!("Adding to ({}, {})", col_index, row_index);
         if let None = self.data[col_index][row_index] {
             self.data[col_index][row_index].replace(entity);
             self.data_length[col_index] += 1;

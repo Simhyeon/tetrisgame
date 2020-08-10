@@ -26,9 +26,9 @@ impl<'a, 'b> SimpleState for MainState<'a, 'b>{
         //self.reader_id = Some(world.fetch_mut::<EventChannel<GameState>>().register_reader());
 
         let mut dispatcher_builder = DispatcherBuilder::new();
-        dispatcher_builder.add(KeyInputSystem::new(world), "keyinput_system", &[]);
+        dispatcher_builder.add(GravitySystem::new(world), "gravity_system", &[]);
+        dispatcher_builder.add(KeyInputSystem::new(world), "keyinput_system", &["gravity_system"]);
         dispatcher_builder.add(StackSystem::new(world), "stack_system", &["keyinput_system"]);
-        dispatcher_builder.add(GravitySystem::new(world), "gravity_system", &["stack_system"]);
         dispatcher_builder.add(CollapseSystem::new(world), "collapse_system", &["stack_system"]);
         dispatcher_builder.add(SpawnerSystem::default(), "spawner_system", &["stack_system", "collapse_system"]);
 

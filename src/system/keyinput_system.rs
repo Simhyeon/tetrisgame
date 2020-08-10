@@ -4,7 +4,7 @@ use amethyst::{
     core::transform::{Transform, Parent},
 //    core::SystemDesc,
     derive::SystemDesc,
-    ecs::prelude::{WriteExpect, System, ReadStorage, Join, Read, SystemData, WriteStorage, World, Write, ReadExpect},
+    ecs::prelude::{WriteExpect, System, ReadStorage, Join, Read, SystemData, WriteStorage, World, Write, ReadExpect, Entities},
     input::{InputHandler},
     shrev::{ReaderId, EventChannel},
 };
@@ -14,6 +14,7 @@ use crate::component::dyn_block::{DynamicBlock, DynBlockHandler, Rotation};
 use crate::component::stt_block::StaticBlock;
 use crate::config::{MovementBindingTypes, AxisBinding, ActionBinding};
 use crate::world::block_data::BlockData;
+use crate::world::gravity_status::GravityStatus;
 use crate::utils;
 use std::f64::consts::PI;
 use std::cmp::Ordering;
@@ -143,6 +144,10 @@ const HEIGHT: f32 = 900.0;
 
 impl<'s> System<'s> for KeyInputSystem {
     type SystemData = (
+        //DEBUG
+        Entities<'s>,
+        ReadStorage<'s, Parent>,
+        //DEBUGEND
         WriteStorage<'s ,Transform>,
         ReadStorage<'s ,DynamicBlock>,
         ReadStorage<'s ,StaticBlock>,
@@ -151,10 +156,11 @@ impl<'s> System<'s> for KeyInputSystem {
         Read<'s, Time>,
         Write<'s, EventChannel<KeyInt>>,
         Write<'s, EventChannel<StackEvent>>,
-        ReadExpect<'s, BlockData>
+        WriteExpect<'s, BlockData>, // -> Priorly was readexpect
+        WriteExpect<'s, GravityStatus>,
     );
 
-    fn run(&mut self, (mut locals,blocks, stt, mut handler, input, time, mut key_event_channel, mut stack_event, block_data): Self::SystemData) {
+    fn run(&mut self, (mut entities, parents, mut locals,blocks, stt, mut handler, input, time, mut key_event_channel, mut stack_event, mut block_data, mut gravity_status): Self::SystemData) {
         if handler.blocks.len() == 0 {
             return;
         }
@@ -185,6 +191,18 @@ impl<'s> System<'s> for KeyInputSystem {
         let mut rotate_left = input.action_is_down(&ActionBinding::RotateLeft).unwrap_or(false);
         let mut shoot = input.action_is_down(&ActionBinding::Shoot).unwrap_or(false);
         let mut debug = input.action_is_down(&ActionBinding::Debug).unwrap_or(false);
+        let mut no_grav = input.action_is_down(&ActionBinding::NoGrav).unwrap_or(false);
+
+        //if no_grav {
+            //match *gravity_status {
+                //GravityStatus::Off => {
+                    //*gravity_status = GravityStatus::On;
+                //}
+                //GravityStatus::On => {
+                    //*gravity_status = GravityStatus::Off;
+                //}
+            //}
+        //}
 
         // Sanitize input
         self.update_key_status(horizontal, vertical, rotate_right, rotate_left, shoot);
@@ -279,9 +297,47 @@ impl<'s> System<'s> for KeyInputSystem {
             }
         }
 
+        if no_grav {
+            // Delete entity values that entity vector contains not entity itself
+            // acutally entity itsefl is not a value rather an indicator.
+            let block_entities = block_data.get_row(45.0);
+            for entity in block_entities {
+                // Unwrap should not fail because data_length is full.
+                if let Some(value) = entity {
+                    entities.delete(value).expect("Failed to delete entity");
+                }
+            }
+
+            // Remove collaped row and move all uppers rows down by 1 row.
+            // And get merged entity vector and use the vector to really move value
+            // downward
+            let to_be_moved = block_data.remove_lows(45.0);
+            for item in to_be_moved {
+                if let Some(entity) = item {
+                    let parent_entity = parents.get(entity).unwrap().entity;
+                    let (x, y, z) = utils::get_y_absolute_move(locals.get(parent_entity).unwrap().euler_angles(), -45.0);
+                    locals.get_mut(entity).unwrap().append_translation_xyz(x, y, z);
+                }
+            }
+        }
 
         if debug {
             println!("{}", *block_data);
+
+            for item in block_data.data.iter().rev() {
+                for sub_item in item.iter() {
+                    if let Some(entity) = sub_item {
+                        print!("({},{})", 
+                            //locals.get(*entity).unwrap().global_matrix().m14.round(), 
+                            //locals.get(*entity).unwrap().global_matrix().m24.round());
+                            (locals.get(*entity).unwrap().global_matrix().m14.round() + 45.0) / 45.0 - 1.0, 
+                            (locals.get(*entity).unwrap().global_matrix().m24.round()) / 45.0 - 1.0);
+                    } else {
+                        print!("( , )")
+                    }
+                }
+                print!("\n")
+            }
         }
 
         //// Currently emtpy code mostly deserved for debugging
@@ -290,31 +346,35 @@ impl<'s> System<'s> for KeyInputSystem {
 
             let mut distance: f32 = HEIGHT;
             let mut top_block : (f32, f32) = (-1.0, -1.0);
+            let mut down_block : (f32, f32)= (-1.0, -1.0);
             for block_entity in handler.blocks.iter() {
                 let top_matrix = locals.get(*block_entity).unwrap().global_matrix();
                 println!("({}, {})", top_matrix.m14, top_matrix.m24);
                 // Get top_most location of down_most columns
                 if let Some(entity) = block_data.get_top_block(top_matrix.m14) {
                     let down_matrix = locals.get(entity).unwrap().global_matrix();
-                    if top_matrix.m24 - down_matrix.m24 <= distance {
+                    if top_matrix.m24 - down_matrix.m24 - 45.0 <= distance {
                         distance = (top_matrix.m24 - down_matrix.m24 - 45.0).round();
                         top_block = (top_matrix.m14.round(), top_matrix.m24.round());
+                        down_block = (down_matrix.m14, down_matrix.m24);
                     }
 
                 } else {
                     if top_matrix.m24 - 45.0 <= distance {
                         distance = top_matrix.m24 - 45.0;
                         top_block = (top_matrix.m14.round(), top_matrix.m24.round());
+                        down_block = (0.0, 0.0);
                     }
                 }
             }
 
             println!("Distance is {}", (distance / 45.0).round());
             println!("Top Block is {:?}", top_block);
-
-            locals.get_mut(handler.parent.unwrap()).unwrap().prepend_translation_y(-distance);
+            println!("Down Block is {:?}", down_block);
+            let current = locals.get(handler.parent.unwrap()).unwrap().global_matrix().m24;
+            locals.get_mut(handler.parent.unwrap()).unwrap().set_translation_y(current-distance);
             stack_event.single_write(StackEvent::IgnoreDelay);
-            //key_event_channel.single_write(KeyInt::Stack);
+            key_event_channel.single_write(KeyInt::Stack);
             return;
         }
 

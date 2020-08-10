@@ -10,13 +10,13 @@ use amethyst::{
 
 use crate::component::dyn_block::{DynamicBlock, DynBlockHandler};
 use crate::system::stack_system::StackEvent;
-
-const MOVEDELAY: f32 = 0.8;
+use crate::world::gravity_status::GravityStatus;
 
 #[derive(SystemDesc)]
 pub struct GravitySystem{
     pub time_delay: f32,
-    stop_gravity: bool,
+    //stop_gravity: bool,
+    move_delay: f32,
     reader_id : ReaderId<StackEvent>,
 }
 
@@ -26,7 +26,8 @@ impl GravitySystem {
         let reader_id = world.fetch_mut::<EventChannel<StackEvent>>().register_reader();
         Self { 
             time_delay : 0.0,
-            stop_gravity : false,
+            move_delay : 1.0,
+            //stop_gravity : false,
             reader_id 
         }
     }
@@ -39,38 +40,44 @@ impl<'s> System<'s> for GravitySystem{
         WriteStorage<'s, Transform>,
         Read<'s, Time>,
         Read<'s, EventChannel<StackEvent>>,
+        ReadExpect<'s, GravityStatus>,
     );
 
-    fn run(&mut self, (handler, _, mut locals, time, event_channel): Self::SystemData){
+    fn run(&mut self, (handler, _, mut locals, time, event_channel, gravity_status): Self::SystemData){
 
         // Read all events
-        for event in event_channel.read(&mut self.reader_id) {
-            match event {
-                StackEvent::ToBeStacked => {
-                    println!("Stop Gravity");
-                    self.stop_gravity = true;
-                    self.time_delay = 0.0; // Also reset time dealy for continous ingegration? I guess
-                    return;
-                }
-                StackEvent::Stacked | StackEvent::Free => {
-                    println!("Use Gravity again");
-                    self.stop_gravity = false;
-                    break;
-                }
+        //for event in event_channel.read(&mut self.reader_id) {
+            //match event {
+                //StackEvent::ToBeStacked => {
+                    //println!("Stop Gravity");
+                    //self.stop_gravity = true;
+                    //self.time_delay = 0.0; // Also reset time dealy for continous ingegration? I guess
+                    //return;
+                //}
+                //StackEvent::Stacked | StackEvent::Free => {
+                    //println!("Use Gravity again");
+                    //self.stop_gravity = false;
+                    //break;
+                //}
                 
-                _ => ()
-            }
-        }
+                //_ => ()
+            //}
+        //}
 
-        if self.stop_gravity {
+        if let GravityStatus::Off = *gravity_status {
             return;
         }
 
         self.time_delay += time.delta_seconds();
-        if self.time_delay >= MOVEDELAY {
+        if self.time_delay >= self.move_delay {
             //println!("Delay : {}", self.time_delay);
             self.time_delay = 0.0;
             locals.get_mut(handler.parent.unwrap()).unwrap().prepend_translation_y(-45.0);
+            println!("^^^^^^^^^^^^^^");
+            println!("GRAVITY IMPOSED with {}", self.move_delay);
+            if self.move_delay >= 0.3 {
+                self.move_delay -= 0.005;
+            }
         }
     }
 }

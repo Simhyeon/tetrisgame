@@ -1,0 +1,132 @@
+(135, 450)
+Calculaing get_top_block X: 3, y: 0
+Calculaing get_top_block X: 3, y: 1
+Calculaing get_top_block X: 3, y: 2
+Calculaing get_top_block X: 3, y: 3
+(135, 495)
+Calculaing get_top_block X: 3, y: 0
+Calculaing get_top_block X: 3, y: 1
+Calculaing get_top_block X: 3, y: 2
+Calculaing get_top_block X: 3, y: 3
+(135, 540)
+Calculaing get_top_block X: 3, y: 0
+Calculaing get_top_block X: 3, y: 1
+Calculaing get_top_block X: 3, y: 2
+Calculaing get_top_block X: 3, y: 3
+(135, 585)
+Calculaing get_top_block X: 3, y: 0
+Calculaing get_top_block X: 3, y: 1
+Calculaing get_top_block X: 3, y: 2
+Calculaing get_top_block X: 3, y: 3
+Distance is 5
+Top Block is (135.0, 450.0)
+Down Block is (135.0, 180.0)
+----------
+IGNOREING DELAY
+----------
+Key Input :::: STACKED
+TOBESTACKED for blocks
+ Stacking with X :135, Y : 5
+ Stacking with X :135, Y : 6
+ Stacking with X :135, Y : 7
+ Stacking with X :135, Y : 8
+Stacked!
+Recieved stack event
+Breaking outer Loop
+SPawning
+Key Input :::: RESET
+^^^^^^^^^^^^^^
+GRAVITY IMPOSED
+^^^^^^^^^^^^^^
+GRAVITY IMPOSED
+^^^^^^^^^^^^^^
+GRAVITY IMPOSED
+^^^^^^^^^^^^^^
+GRAVITY IMPOSED
+^^^^^^^^^^^^^^
+GRAVITY IMPOSED
+^^^^^^^^^^^^^^
+GRAVITY IMPOSED
+ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
+ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
+ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
+ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
+ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
+ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
+ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
+ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
+ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
+ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
+ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
+ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
+ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
+ㅡㅡㅡㅁㅡㅡㅡㅡㅡㅡ
+ㅡㅁㅡㅁㅡㅡㅡㅡㅡㅡ
+ㅁㅁㅁㅁㅡㅁㅡㅡㅡㅁ
+ㅁㅁㅡㅁㅁㅁㅁㅁㅁㅁ
+ㅁㅁㅡㅁㅁㅁㅁㅁㅁㅁ
+ㅁㅁㅁㅁㅁㅁㅡㅁㅁㅡ
+ㅡㅁㅁㅁㅁㅁㅁㅁㅁㅁ
+
+(360, 540)
+Calculaing get_top_block X: 8, y: 0
+Calculaing get_top_block X: 8, y: 1
+Calculaing get_top_block X: 8, y: 2
+Calculaing get_top_block X: 8, y: 3
+(315, 540)
+Calculaing get_top_block X: 7, y: 0
+Calculaing get_top_block X: 7, y: 1
+Calculaing get_top_block X: 7, y: 2
+Calculaing get_top_block X: 7, y: 3
+(270, 540)
+Calculaing get_top_block X: 6, y: 0
+Calculaing get_top_block X: 6, y: 2
+Calculaing get_top_block X: 6, y: 3
+(270, 585)
+Calculaing get_top_block X: 6, y: 0
+Calculaing get_top_block X: 6, y: 2
+Calculaing get_top_block X: 6, y: 3
+Distance is 7
+Top Block is (360.0, 540.0)
+Down Block is (360.0, 180.0)
+----------
+IGNOREING DELAY
+----------
+Key Input :::: STACKED
+TOBESTACKED for blocks
+ Stacking with X :360, Y : 5
+ Stacking with X :315, Y : 5
+ Stacking with X :270, Y : 5
+ Stacking with X :270, Y : 6
+Stacked!
+Recieved stack event
+Breaking outer Loop
+SPawning
+Key Input :::: RESET
+^^^^^^^^^^^^^^
+GRAVITY IMPOSED
+ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
+ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
+ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
+ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
+ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
+ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
+ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
+ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
+ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
+ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
+ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
+ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
+ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ
+ㅡㅡㅡㅁㅡㅡㅡㅡㅡㅡ
+ㅡㅁㅡㅁㅡㅡㅁㅡㅡㅡ
+ㅁㅁㅁㅁㅡㅁㅁㅁㅁㅁ
+ㅁㅁㅡㅁㅁㅁㅁㅁㅁㅁ
+ㅁㅁㅡㅁㅁㅁㅁㅁㅁㅁ
+ㅁㅁㅁㅁㅁㅁㅡㅁㅁㅡ
+ㅡㅁㅁㅁㅁㅁㅁㅁㅁㅁ
+
+^^^^^^^^^^^^^^
+
+
+블록이 마술처럼 사라졌다. 그리고 우편에 있던 블록이 갑자기 사라졌다. collapse 이후 일어난 일이다.

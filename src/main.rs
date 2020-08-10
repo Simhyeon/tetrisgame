@@ -23,7 +23,10 @@ mod events;
 
 use crate::state::{ loading_state::LoadingState, };
 use crate::config::{MovementBindingTypes, BlocksConfig, PaneConfig};
-use crate::world::block_data::BlockData;
+use crate::world::{
+    gravity_status::GravityStatus,
+    block_data::BlockData,
+};
 use crate::events::GameEvent;
 
 fn main() -> amethyst::Result<()> {
@@ -68,6 +71,7 @@ fn main() -> amethyst::Result<()> {
         .with_resource(blocks_config)
         .with_resource(BlockData::new())
         .with_resource(GameEvent::Normal)
+        .with_resource(GravityStatus::On)
         .build(game_data)?;
     //let mut game = Application::new(assets_dir, LoadingState::default(), game_data)?;
     game.run();

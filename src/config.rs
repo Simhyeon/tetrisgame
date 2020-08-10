@@ -18,6 +18,7 @@ pub enum ActionBinding {
     RotateRight,
     RotateLeft,
     Debug,
+    NoGrav,
 }
 
 #[derive(Clone, Default, Debug, Deserialize, Serialize)]

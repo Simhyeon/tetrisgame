@@ -9,7 +9,10 @@ use amethyst::{
 use crate::component::dyn_block::{DynamicBlock, DynBlockHandler};
 use crate::component::stt_block::StaticBlock;
 use crate::system::keyinput_system::KeyInt;
-use crate::world::block_data::BlockData;
+use crate::world::{
+    gravity_status::GravityStatus,
+    block_data::BlockData
+};
 use crate::events::GameEvent;
 
 const STACKDELAY: f32 = 0.3;
@@ -67,6 +70,7 @@ impl<'s> System<'s> for StackSystem {
         WriteExpect<'s, BlockData>,
         WriteExpect<'s, GameEvent>,
         Read<'s, LazyUpdate>,
+        WriteExpect<'s, GravityStatus>,
     );
 
     // TODO Change to_be_stacked value as some kind of trigger
@@ -79,7 +83,8 @@ impl<'s> System<'s> for StackSystem {
             time, 
             mut block_data, 
             mut game_event,
-            updater
+            updater,
+            mut gravity_status
     ): Self::SystemData) {
         if handler.blocks.len() == 0 {
             return;
@@ -94,6 +99,7 @@ impl<'s> System<'s> for StackSystem {
                     println!("IGNOREING DELAY");
                     println!("----------");
                     self.no_delay = true;
+                    *gravity_status = GravityStatus::Off;
                     //self.to_be_stacked = false;
                 },
                 _ => (),
@@ -127,6 +133,7 @@ impl<'s> System<'s> for StackSystem {
                         self.to_be_stacked = true;
                         println!("TOBESTACKED for walls");
                         stack_event.single_write(StackEvent::ToBeStacked);
+                        *gravity_status = GravityStatus::Off;
                     }
                     to_free = false;
                     break 'outer;
@@ -139,12 +146,19 @@ impl<'s> System<'s> for StackSystem {
                                 self.to_be_stacked = true;
                                 println!("TOBESTACKED for blocks");
                                 stack_event.single_write(StackEvent::ToBeStacked);
+                                *gravity_status = GravityStatus::Off;
                             }
                             to_free = false;
                             break 'outer;
                         }
                 }
             }
+
+            //// Another calibration... feels bad but it's reality
+            //if self.no_delay && !self.to_be_stacked {
+                //locals.get_mut(handler.parent.unwrap()).unwrap().prepend_translation_y(-45.0);
+            //}
+
         } else {
 
             // TODO Currently parent entity is not removed while entity is very resource light and
@@ -156,13 +170,39 @@ impl<'s> System<'s> for StackSystem {
             self.to_be_stacked = false;
             self.no_delay = false;
 
+            // Calibrate undefined duplication
+            let mut do_calibrate = false;
+            'cal :for entity in &handler.blocks { 
+                let entity_matrix = locals.get(*entity).unwrap().global_matrix();
+                for (local, _, _) in (&locals, &dyn_blocks, &stt_blocks).join() {
+                    if local.global_matrix() == entity_matrix {
+                        do_calibrate = true;
+                        break 'cal;
+                    }
+                }
+            }
+
+            if do_calibrate {
+                let current = locals.get_mut(handler.parent.unwrap()).unwrap().global_matrix().m24.round();
+                locals.get_mut(handler.parent.unwrap()).unwrap().set_translation_y(current + 45.0);
+                println!("\\\\\\\\\\\\\\\\\\");
+                println!("\\\\\\\\\\\\\\\\\\");
+                println!("\\\\\\\\\\\\\\\\\\");
+                println!("\\\\\\\\\\\\\\\\\\");
+                println!("\\\\\\\\\\\\\\\\\\");
+                println!("\\\\\\\\\\\\\\\\\\");
+                println!("\\\\\\\\\\\\\\\\\\");
+                println!("Calibrated");
+            }
+        
             // Now stack the blocks
             for entity in &handler.blocks {
 
                 stt_blocks.insert(*entity, StaticBlock).expect("ERR");
                 // Add block to block_data
                 let matrix_m = locals.get(*entity).unwrap().global_matrix();
-                println!(" Stacking with X :{}, Y : {}", matrix_m.m14.round(), matrix_m.m24.round());
+                println!(" Stacking with X :{}, Y : {}", (matrix_m.m14.round() + 45.0 / 45.0).round() - 1.0, (matrix_m.m24.round() / 45.0).round());
+                println!("Real Value is X :{}, Y :{}", matrix_m.m14.round(), matrix_m.m24.round());
                 match block_data.add_block(matrix_m.m14.round(), matrix_m.m24.round(), entity.clone()) {
                     Ok(_) => (),
                     Err(_) => {
@@ -177,6 +217,7 @@ impl<'s> System<'s> for StackSystem {
             handler.blocks.clear();
             stack_event.single_write(StackEvent::Stacked);
             write_key_event.single_write(KeyInt::None);
+            *gravity_status = GravityStatus::On;
             println!("Stacked!");
         }
 
@@ -188,6 +229,8 @@ impl<'s> System<'s> for StackSystem {
             stack_event.single_write(StackEvent::Free);
             self.stack_delay = STACKDELAY;
             self.to_be_stacked = false;
+            self.no_delay = false;
+            *gravity_status = GravityStatus::On;
             return;
         }
     }
