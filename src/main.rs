@@ -8,7 +8,8 @@ use amethyst::{
         types::DefaultBackend,
         RenderingBundle,
     },
-    input::InputBundle,
+    input::{InputBundle},
+    ui::{UiBundle, RenderUi},
 };
 
 mod state;
@@ -20,7 +21,7 @@ mod world;
 mod events;
 
 use crate::state::{ loading_state::LoadingState, };
-use crate::config::{MovementBindingTypes, BlocksConfig};
+use crate::config::{MovementBindingTypes, BlocksConfig, PaneConfig};
 use crate::world::block_data::BlockData;
 
 fn main() -> amethyst::Result<()> {
@@ -38,7 +39,6 @@ fn main() -> amethyst::Result<()> {
 
     let blocks_config = app_root.join("config").join("blocks.ron");
     let blocks_config = BlocksConfig::load(&blocks_config)?;
-
     // TODO 아직 키보드 바인딩은 필요없다. 
     //let binding_path = app_root.join("config").join("bindings.ron");
     //let input_bundle = InputBundle::<-CustomBindingTypes->::new()
@@ -46,6 +46,9 @@ fn main() -> amethyst::Result<()> {
 
     // Spawn World
     let game_data = GameDataBuilder::default()
+        .with_bundle(TransformBundle::new())?
+        .with_bundle(input_bundle)?
+        .with_bundle(UiBundle::<MovementBindingTypes>::new())?
         .with_bundle(
             RenderingBundle::<DefaultBackend>::new()
             .with_plugin(
@@ -54,11 +57,8 @@ fn main() -> amethyst::Result<()> {
                 //.with_clear([255.0, 255.0, 255.0, 0.0]),
             )
             .with_plugin(RenderFlat2D::default())
-            //.with_plugin(RenderUi::default()) TODO 아직 UI는 필요없다. 
-        )?
-        .with_bundle(TransformBundle::new())?
-        .with_bundle(input_bundle)?;
-
+            .with_plugin(RenderUi::default()) 
+        )?;
 
     let assets_dir = app_root.join("assets");
     // with_resource(blocks_config).

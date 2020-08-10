@@ -1,6 +1,8 @@
 use std::fmt::{self, Display};
 
+use amethyst::assets::Handle;
 use amethyst::input::BindingTypes;
+use amethyst::renderer::SpriteSheet;
     
 use serde::{Serialize, Deserialize};
 
@@ -45,12 +47,29 @@ pub struct Offset {
     pub left_rotate: (f32, f32),
 }
 
-//origin: 2,
-//offset: (
-    //right_rotate: (-2, 1)
-    //left_rotate: (-1, 2)
-//),
+pub struct PaneSpriteHandle {
+    pub sprite_sheet : Handle<SpriteSheet>
+}
 
+impl PaneSpriteHandle{
+    pub fn new(sprite_sheet : Handle<SpriteSheet>) -> Self {
+        Self {  
+            sprite_sheet,
+        }
+    }
+}
+
+#[derive(Clone, Default,Debug, Deserialize, Serialize)]
+pub struct PaneConfig {
+    pub panes : Vec<Pane>,
+}
+
+#[derive(Clone, Default,Debug, Deserialize, Serialize)]
+pub struct Pane {
+    pub name : String,
+    pub bottom_left : (f32, f32),
+    pub top_right : (f32, f32),
+}
 
 impl Display for AxisBinding {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

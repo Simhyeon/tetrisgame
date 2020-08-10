@@ -3,12 +3,13 @@ use amethyst::{
     derive::SystemDesc,
     ecs::prelude::{Join, Read, ReadStorage, System, SystemData, World, WriteStorage, WriteExpect, LazyUpdate, Write, ReadExpect, Entity, Entities},
     shrev::{ReaderId, EventChannel},
+    ui::UiText,
 };
 use std::collections::HashMap;
 
 use crate::component::stt_block::StaticBlock;
 use crate::system::stack_system::StackEvent;
-use crate::world::block_data::BlockData;
+use crate::world::{block_data::BlockData, score_text::ScoreText};
 use crate::utils;
 
 use std::cmp::Ordering;
@@ -47,10 +48,12 @@ impl<'s> System<'s> for CollapseSystem {
         ReadStorage<'s, Parent>,
         ReadStorage<'s, StaticBlock>,
         Read<'s, EventChannel<StackEvent>>,
-        WriteExpect<'s, BlockData>
+        WriteExpect<'s, BlockData>,
+        WriteExpect<'s, ScoreText>,
+        WriteStorage<'s, UiText>
     );
 
-    fn run(&mut self, (entities, mut locals, parents, stt_blocks, event_channel, mut block_data) : Self::SystemData) {
+    fn run(&mut self, (entities, mut locals, parents, stt_blocks, event_channel, mut block_data, mut score_text, mut ui_text) : Self::SystemData) {
         for event in event_channel.read(&mut self.reader_id) {
             if let StackEvent::Stacked = event {
                 // Collapse logic
@@ -80,6 +83,14 @@ impl<'s> System<'s> for CollapseSystem {
                                     locals.get_mut(entity).unwrap().append_translation_xyz(x, y, z);
                                 }
                             }
+                            
+                            // This is hard code af but I could know how to find a specific text
+                            // easily... 
+                            for ui in (&mut ui_text).join() {
+                                score_text.add_score(1000);
+                                ui.text = score_text.score_text.clone();
+                            }
+
                             // Break out of "For index in 0..20 loop" which is inner loop
                             // But stay in outer loop to check from start
                             continue 'outer;

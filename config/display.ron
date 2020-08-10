@@ -1,4 +1,4 @@
 (
 	title: "Tetris!",
-	dimensions: Some((450, 900)),
+	dimensions: Some((600, 900)),
 )

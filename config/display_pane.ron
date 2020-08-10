@@ -1,0 +1,14 @@
+(
+	panes: [
+	(
+		name: "game_pane",
+		bottom_left: (0, 0),
+		top_right: (450, 900),
+	),
+	(
+		name: "meta_pane",
+		bottom_left: (450, 0),
+		top_right: (600, 900),
+	)
+	]
+)
