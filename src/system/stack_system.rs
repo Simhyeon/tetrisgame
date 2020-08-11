@@ -102,14 +102,13 @@ impl<'s> System<'s> for StackSystem {
         match *stack_status {
             StackStatus::Stacked | StackStatus::ShootStack => {
 
-                println!("Stacking Call ");
+                //println!("Stacking Call ");
                 if let StackStatus::ShootStack = *stack_status {
                     if self.shoot_delay_frame != 0 {
                         self.shoot_delay_frame -=1;
                         return;
                     } else {
                         self.shoot_delay_frame = SHOOTDFRAME;
-                        println!("{}", *block_data);
                     }
                 }
                 // TODO Currently parent entity is not removed while entity is very resource light and
@@ -137,8 +136,8 @@ impl<'s> System<'s> for StackSystem {
 
                     if block_data.find_block(local_matrix.m14, local_matrix.m24) {
                         // Now we have to recalibrate the blocks
-                        println!("Checking soundness of block duplication ---");
-                        println!("While it is ({}, {})", local_matrix.m14, local_matrix.m24);
+                        //println!("Checking soundness of block duplication ---");
+                        //println!("While it is ({}, {})", local_matrix.m14, local_matrix.m24);
                         soundness = false;
                         break;
                     }
@@ -156,15 +155,9 @@ impl<'s> System<'s> for StackSystem {
                     stt_blocks.insert(*entity, StaticBlock).expect("ERR");
                     // Add block to block_data
                     let matrix_m = locals.get(*entity).unwrap().global_matrix();
-                    println!(" Stacking with X :{}, Y : {}", (matrix_m.m14.round() + 45.0 / 45.0).round() - 1.0, (matrix_m.m24.round() / 45.0).round());
-                    println!("Real Value is X :{}, Y :{}", matrix_m.m14.round(), matrix_m.m24.round());
                     match block_data.add_block(matrix_m.m14.round(), matrix_m.m24.round(), entity.clone()) {
                         Ok(_) => (),
                         Err(_) => {
-                            // This is for debuggin purpose since adding is not yet compelte... in
-                            // terms of bug free.
-                            println!("{}", *block_data);
-                            // Send game over event channel
                             *game_event = GameEvent::GameOver;
                         }
                     }
@@ -178,24 +171,23 @@ impl<'s> System<'s> for StackSystem {
                 *key_int = KeyInt::None;
                 *gravity_status = GravityStatus::On;
                 *collapse_status = CollapseStatus::Triggered;
-                println!("Stacked!");
+                //println!("Stacked!");
             }
             StackStatus::TobeStacked | StackStatus::None => {
                 if let StackStatus::TobeStacked = *stack_status {
                     self.stack_delay -= time.delta_seconds();
                     if self.stack_delay <= 0.0 {
-                        println!("Do the stack");
+                        //println!("Execute stack");
                         *stack_status = StackStatus::Stacked;
                         return;
                     } else if self.stack_delay <= KEYINTDELAY {
-                        println!("Just before stack");
                         *key_int = KeyInt::Stack;
                     }
                 }
 
                 'outer :for (dyn_local, _, ()) in (&locals, &dyn_blocks, !&stt_blocks).join() {
                     if dyn_local.global_matrix().m24.round() == 45.0 { // this is when to be stacked
-                        println!("To be Stacked");
+                        //println!("To be Stacked");
                         *stack_status = StackStatus::TobeStacked;
                         *gravity_status = GravityStatus::Off;
                         break 'outer;
@@ -204,7 +196,7 @@ impl<'s> System<'s> for StackSystem {
                     for (local, _) in (&locals, &stt_blocks).join() {
                         if local.global_matrix().m24.round() == dyn_local.global_matrix().m24.round() - 45.0 
                             && local.global_matrix().m14.round() == dyn_local.global_matrix().m14.round() {
-                        println!("To be Stacked");
+                                //println!("To be Stacked");
                                 *stack_status = StackStatus::TobeStacked;
                                 *gravity_status = GravityStatus::Off;
                                 break 'outer;
@@ -213,13 +205,13 @@ impl<'s> System<'s> for StackSystem {
 
                     // No break has been called which means Free state
                     if let StackStatus::TobeStacked = *stack_status {
-                        println!("Free from to be stacked");
+                        //println!("Free from to be stacked");
                         *stack_status = StackStatus::Free;
                     }
                 }
             }
             StackStatus::Free => {
-                println!("Free stack event");
+                //println!("Free stack event");
                 self.stack_delay = STACKDELAY;
                 *gravity_status = GravityStatus::On;
                 *stack_status = StackStatus::None;

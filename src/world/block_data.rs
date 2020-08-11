@@ -83,7 +83,6 @@ impl BlockData {
         let mut ent: Option<Entity> = None;
         for col in 0..col_index {
             if let Some(entity) = self.data[col][index] {
-                println!("Calculaing get_top_block X: {}, y: {}", index, col);
                 ent.replace(entity);
             }
         }
@@ -127,17 +126,11 @@ impl BlockData {
         let col_index = Self::get_col_index_from_m24(matrix_m24);
         let row_index = Self::get_row_index_from_m14(matrix_m14);
 
-        println!("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
-        println!("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
-        println!("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~");
-        println!("<ADD BLOCK>");
-        println!("Adding to ({}, {})", col_index, row_index);
         if let None = self.data[col_index][row_index] {
             self.data[col_index][row_index].replace(entity);
             self.data_length[col_index] += 1;
         } else {
-            println!("Already existing in ... ");
-            println!(" X :{} Y : {}", row_index, col_index);
+            println!("Duplidate blocks hvae been found.");
             return Err("Game Over ... OR Hardly detected problem occured.");
         } 
 

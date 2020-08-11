@@ -87,9 +87,6 @@ impl<'s> System<'s> for GravitySystem{
                 //println!("Delay : {}", self.time_delay);
                 self.time_delay = 0.0;
                 locals.get_mut(handler.parent.unwrap()).unwrap().prepend_translation_y(-45.0);
-                println!("^^^^^^^^^^^^^^");
-                println!("GRAVITY IMPOSED with {}", self.move_delay);
-                println!("Current Stack status {:?}", *stack_status);
                 if self.move_delay >= 0.3 {
                     self.move_delay -= 0.005;
                 }

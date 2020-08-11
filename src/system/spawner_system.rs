@@ -34,7 +34,7 @@ impl<'s> System<'s> for SpawnerSystem{
 
     fn run(&mut self, (entities, mut handler, updater, sprite_sheet_handle, block_config): Self::SystemData){
         if handler.blocks.len() == 0 {
-            println!("SPawning");
+            //println!("SPawning");
 
             let mut rng = thread_rng();
             let block_index: usize;

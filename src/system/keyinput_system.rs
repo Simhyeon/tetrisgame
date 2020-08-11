@@ -477,7 +477,7 @@ impl<'s> System<'s> for KeyInputSystem {
                     locals.get_mut(handler.parent.unwrap()).unwrap().prepend_rotation_z_axis(-(PI * 0.5) as f32);
                 }
             } else {
-                println!("--Blocked Rotation--");
+                //println!("--Blocked Rotation--");
             }
         }
     }

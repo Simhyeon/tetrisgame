@@ -28,7 +28,6 @@ impl<'s> System<'s> for CollapseSystem {
     fn run(&mut self, (entities, mut locals, parents, stt_blocks, mut block_data, mut score_text, mut collapse_status,mut ui_text) : Self::SystemData) {
         if let CollapseStatus::Triggered = *collapse_status {
             // Collapse logic
-            println!("Recieved stack event");
             'outer : loop {
                 'inner : for index in 0..20 {
                     let col_index = (index +1) as f32 * 45.0;
@@ -67,7 +66,6 @@ impl<'s> System<'s> for CollapseSystem {
                         continue 'outer;
                     }
                 }
-                println!("Breaking outer Loop");
                 // Break out of outer loop if no col_index is detected;
                 *collapse_status = CollapseStatus::None;
                 break 'outer;
