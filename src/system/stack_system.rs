@@ -4,18 +4,22 @@ use amethyst::{
     derive::SystemDesc,
     ecs::prelude::{Join, System, SystemData, WriteStorage, ReadStorage, WriteExpect, Write, Read, World, LazyUpdate},
     shrev::{EventChannel, ReaderId},
+    shred::PanicHandler,
 };
 
 use crate::component::dyn_block::{DynamicBlock, DynBlockHandler};
 use crate::component::stt_block::StaticBlock;
-use crate::system::keyinput_system::KeyInt;
 use crate::world::{
+    key_int::KeyInt,
     gravity_status::GravityStatus,
-    block_data::BlockData
+    block_data::BlockData,
+    stack_status::StackStatus,
+    collapse_status::CollapseStatus,
 };
 use crate::events::GameEvent;
 
 const STACKDELAY: f32 = 0.3;
+const SHOOTDFRAME: usize = 2;
 const KEYINTDELAY: f32 = 0.05;
 
 #[derive(Debug)]
@@ -28,9 +32,8 @@ pub enum StackEvent {
 
 #[derive(SystemDesc)]
 pub struct StackSystem {
-    to_be_stacked: bool,
     stack_delay: f32,
-    no_delay: bool,
+    shoot_delay_frame: usize,
     reader_id : ReaderId<StackEvent>,
 }
 
@@ -39,9 +42,8 @@ impl StackSystem {
         <Self as System<'_>>::SystemData::setup(world);
         let reader_id = world.fetch_mut::<EventChannel<StackEvent>>().register_reader();
         Self {  
-            to_be_stacked : false,
             stack_delay: STACKDELAY,
-            no_delay: false,
+            shoot_delay_frame : SHOOTDFRAME,
             reader_id,
         }
     }
@@ -71,6 +73,9 @@ impl<'s> System<'s> for StackSystem {
         WriteExpect<'s, GameEvent>,
         Read<'s, LazyUpdate>,
         WriteExpect<'s, GravityStatus>,
+        WriteExpect<'s, StackStatus>,
+        WriteExpect<'s, CollapseStatus>,
+        WriteExpect<'s, KeyInt>,
     );
 
     // TODO Change to_be_stacked value as some kind of trigger
@@ -84,154 +89,143 @@ impl<'s> System<'s> for StackSystem {
             mut block_data, 
             mut game_event,
             updater,
-            mut gravity_status
+            mut gravity_status,
+            mut stack_status,
+            mut collapse_status,
+            mut key_int
     ): Self::SystemData) {
+
         if handler.blocks.len() == 0 {
             return;
         }
 
-        let mut stack_confirm = false;
+        match *stack_status {
+            StackStatus::Stacked | StackStatus::ShootStack => {
 
-        for event in stack_event.read(&mut self.reader_id) {
-            match event {
-                StackEvent::IgnoreDelay => {
-                    println!("----------");
-                    println!("IGNOREING DELAY");
-                    println!("----------");
-                    self.no_delay = true;
-                    *gravity_status = GravityStatus::Off;
-                    //self.to_be_stacked = false;
-                },
-                _ => (),
-            }
-        } 
-
-        if self.to_be_stacked && !stack_confirm {
-            //Wait for certain times and 
-            self.stack_delay -= time.delta_seconds();
-            if self.stack_delay <= 0.0 || self.no_delay{
-                stack_confirm = true;
-            } else if self.stack_delay <= KEYINTDELAY {
-                // This else if statement is to prevent from user to give input at the same time
-                // block is stacked. Which makes block stacked on air. Which is not desired
-                // actions.
-                // However this method is not good at all. Since sending key event is based on
-                // delta time which is time between continous function calls. and such delta
-                // time can be different among other devices and enviorments.
-                // For example when os failed to allocate enough resource for ths program
-                // then this functionality might fail. 
-                // (While it is also highly expected to fail to get user input anyway.)
-                write_key_event.single_write(KeyInt::Stack);
-            }
-        }
-
-        let mut to_free : bool = true;
-        if !stack_confirm {
-            'outer :for (dyn_local, _, ()) in (&locals, &dyn_blocks, !&stt_blocks).join() {
-                if dyn_local.global_matrix().m24.round() == 45.0 { // this is when to be stacked
-                    if !self.to_be_stacked {
-                        self.to_be_stacked = true;
-                        println!("TOBESTACKED for walls");
-                        stack_event.single_write(StackEvent::ToBeStacked);
-                        *gravity_status = GravityStatus::Off;
-                    }
-                    to_free = false;
-                    break 'outer;
-                }
-
-                for (local, _) in (&locals, &stt_blocks).join() {
-                    if local.global_matrix().m24.round() == dyn_local.global_matrix().m24.round() - 45.0 
-                        && local.global_matrix().m14.round() == dyn_local.global_matrix().m14.round() {
-                            if !self.to_be_stacked {
-                                self.to_be_stacked = true;
-                                println!("TOBESTACKED for blocks");
-                                stack_event.single_write(StackEvent::ToBeStacked);
-                                *gravity_status = GravityStatus::Off;
-                            }
-                            to_free = false;
-                            break 'outer;
-                        }
-                }
-            }
-
-            //// Another calibration... feels bad but it's reality
-            //if self.no_delay && !self.to_be_stacked {
-                //locals.get_mut(handler.parent.unwrap()).unwrap().prepend_translation_y(-45.0);
-            //}
-
-        } else {
-
-            // TODO Currently parent entity is not removed while entity is very resource light and
-            // doesn't get calculated at all so this is not that bad
-            // However memory is getting leaked definitely
-
-            // Reset variables
-            self.stack_delay = STACKDELAY;
-            self.to_be_stacked = false;
-            self.no_delay = false;
-
-            // Calibrate undefined duplication
-            let mut do_calibrate = false;
-            'cal :for entity in &handler.blocks { 
-                let entity_matrix = locals.get(*entity).unwrap().global_matrix();
-                for (local, _, _) in (&locals, &dyn_blocks, &stt_blocks).join() {
-                    if local.global_matrix() == entity_matrix {
-                        do_calibrate = true;
-                        break 'cal;
-                    }
-                }
-            }
-
-            if do_calibrate {
-                let current = locals.get_mut(handler.parent.unwrap()).unwrap().global_matrix().m24.round();
-                locals.get_mut(handler.parent.unwrap()).unwrap().set_translation_y(current + 45.0);
-                println!("\\\\\\\\\\\\\\\\\\");
-                println!("\\\\\\\\\\\\\\\\\\");
-                println!("\\\\\\\\\\\\\\\\\\");
-                println!("\\\\\\\\\\\\\\\\\\");
-                println!("\\\\\\\\\\\\\\\\\\");
-                println!("\\\\\\\\\\\\\\\\\\");
-                println!("\\\\\\\\\\\\\\\\\\");
-                println!("Calibrated");
-            }
-        
-            // Now stack the blocks
-            for entity in &handler.blocks {
-
-                stt_blocks.insert(*entity, StaticBlock).expect("ERR");
-                // Add block to block_data
-                let matrix_m = locals.get(*entity).unwrap().global_matrix();
-                println!(" Stacking with X :{}, Y : {}", (matrix_m.m14.round() + 45.0 / 45.0).round() - 1.0, (matrix_m.m24.round() / 45.0).round());
-                println!("Real Value is X :{}, Y :{}", matrix_m.m14.round(), matrix_m.m24.round());
-                match block_data.add_block(matrix_m.m14.round(), matrix_m.m24.round(), entity.clone()) {
-                    Ok(_) => (),
-                    Err(_) => {
-                        // This is for debuggin purpose since adding is not yet compelte... in
-                        // terms of bug free.
+                println!("Stacking Call ");
+                if let StackStatus::ShootStack = *stack_status {
+                    if self.shoot_delay_frame != 0 {
+                        self.shoot_delay_frame -=1;
+                        return;
+                    } else {
+                        self.shoot_delay_frame = SHOOTDFRAME;
                         println!("{}", *block_data);
-                        // Send game over event channel
+                    }
+                }
+                // TODO Currently parent entity is not removed while entity is very resource light and
+                // doesn't get calculated at all so this is not that bad
+                // However memory is getting leaked definitely
+
+
+                // TODO
+                // Currently something worng... But I dont know
+                let mut soundness: bool = true; // Assume the blocks are sound.
+                for entity in &handler.blocks {
+                    let local_matrix = locals.get(*entity).unwrap().global_matrix();
+
+                    // When y value is over height of screen which means, in this case,
+                    // game over
+                    if local_matrix.m24 >= 900.0  {
                         *game_event = GameEvent::GameOver;
+                        return;
+                    }
+
+                    if local_matrix.m24.round() <= 0.0 {
+                        locals.get_mut(handler.parent.unwrap()).unwrap().append_translation_xyz(0.0, 45.0, 0.0);
+                        return;
+                    }
+
+                    if block_data.find_block(local_matrix.m14, local_matrix.m24) {
+                        // Now we have to recalibrate the blocks
+                        println!("Checking soundness of block duplication ---");
+                        println!("While it is ({}, {})", local_matrix.m14, local_matrix.m24);
+                        soundness = false;
+                        break;
+                    }
+                }
+                if !soundness {
+                    let parent_entity = handler.parent.unwrap();
+                    let current = locals.get(parent_entity).unwrap().global_matrix().m24;
+                    locals.get_mut(parent_entity).unwrap().set_translation_y(current + 45.0);
+                    return;
+                }
+
+                // Now stack the blocks
+                for entity in &handler.blocks {
+
+                    stt_blocks.insert(*entity, StaticBlock).expect("ERR");
+                    // Add block to block_data
+                    let matrix_m = locals.get(*entity).unwrap().global_matrix();
+                    println!(" Stacking with X :{}, Y : {}", (matrix_m.m14.round() + 45.0 / 45.0).round() - 1.0, (matrix_m.m24.round() / 45.0).round());
+                    println!("Real Value is X :{}, Y :{}", matrix_m.m14.round(), matrix_m.m24.round());
+                    match block_data.add_block(matrix_m.m14.round(), matrix_m.m24.round(), entity.clone()) {
+                        Ok(_) => (),
+                        Err(_) => {
+                            // This is for debuggin purpose since adding is not yet compelte... in
+                            // terms of bug free.
+                            println!("{}", *block_data);
+                            // Send game over event channel
+                            *game_event = GameEvent::GameOver;
+                        }
+                    }
+                }
+
+                // Reset variables
+                handler.blocks.clear();
+                handler.parent.take();
+                self.stack_delay = STACKDELAY;
+                *stack_status = StackStatus::None;
+                *key_int = KeyInt::None;
+                *gravity_status = GravityStatus::On;
+                *collapse_status = CollapseStatus::Triggered;
+                println!("Stacked!");
+            }
+            StackStatus::TobeStacked | StackStatus::None => {
+                if let StackStatus::TobeStacked = *stack_status {
+                    self.stack_delay -= time.delta_seconds();
+                    if self.stack_delay <= 0.0 {
+                        println!("Do the stack");
+                        *stack_status = StackStatus::Stacked;
+                        return;
+                    } else if self.stack_delay <= KEYINTDELAY {
+                        println!("Just before stack");
+                        *key_int = KeyInt::Stack;
+                    }
+                }
+
+                'outer :for (dyn_local, _, ()) in (&locals, &dyn_blocks, !&stt_blocks).join() {
+                    if dyn_local.global_matrix().m24.round() == 45.0 { // this is when to be stacked
+                        println!("To be Stacked");
+                        *stack_status = StackStatus::TobeStacked;
+                        *gravity_status = GravityStatus::Off;
+                        break 'outer;
+                    }
+
+                    for (local, _) in (&locals, &stt_blocks).join() {
+                        if local.global_matrix().m24.round() == dyn_local.global_matrix().m24.round() - 45.0 
+                            && local.global_matrix().m14.round() == dyn_local.global_matrix().m14.round() {
+                        println!("To be Stacked");
+                                *stack_status = StackStatus::TobeStacked;
+                                *gravity_status = GravityStatus::Off;
+                                break 'outer;
+                            }
+                    }
+
+                    // No break has been called which means Free state
+                    if let StackStatus::TobeStacked = *stack_status {
+                        println!("Free from to be stacked");
+                        *stack_status = StackStatus::Free;
                     }
                 }
             }
-            handler.blocks.clear();
-            stack_event.single_write(StackEvent::Stacked);
-            write_key_event.single_write(KeyInt::None);
-            *gravity_status = GravityStatus::On;
-            println!("Stacked!");
-        }
-
-        // if gravtiy free condition has been met and also 
-        // to_be_stacked was already called which means stack system priorly
-        // detected stack call  and now it is not detected.
-        if self.to_be_stacked && to_free {
-            println!("Free stack event");
-            stack_event.single_write(StackEvent::Free);
-            self.stack_delay = STACKDELAY;
-            self.to_be_stacked = false;
-            self.no_delay = false;
-            *gravity_status = GravityStatus::On;
-            return;
+            StackStatus::Free => {
+                println!("Free stack event");
+                self.stack_delay = STACKDELAY;
+                *gravity_status = GravityStatus::On;
+                *stack_status = StackStatus::None;
+                *key_int = KeyInt::None;
+                return;
+            }
         }
     }
 }

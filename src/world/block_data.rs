@@ -2,7 +2,7 @@ use amethyst::{
     prelude::*,
     ecs::{Entity, World},
 };
-
+// hread '<unnamed>' panicked at 'index out of bounds: the len is 20 but the index is 20', src/world/block_data.rs:119:23
 use std::fmt;
 use std::fmt::{Display, Formatter};
 
@@ -77,10 +77,11 @@ impl BlockData {
         }
     }
 
-    pub fn get_top_block(&self, x_value: f32) -> Option<Entity>{
+    pub fn get_top_block(&self, x_value: f32, y_value: f32) -> Option<Entity>{
         let index = Self::get_row_index_from_m14(x_value);
+        let col_index = Self::get_col_index_from_m24(y_value);
         let mut ent: Option<Entity> = None;
-        for col in 0..BLOCK_HEIGHT {
+        for col in 0..col_index {
             if let Some(entity) = self.data[col][index] {
                 println!("Calculaing get_top_block X: {}, y: {}", index, col);
                 ent.replace(entity);

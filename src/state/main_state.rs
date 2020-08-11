@@ -10,6 +10,7 @@ use crate::system::{
     gravity_system::GravitySystem,
     keyinput_system::KeyInputSystem,
     collapse_system::CollapseSystem,
+    put_inside::PutInsideSystem,
 };
 
 use crate::events::GameEvent;
@@ -26,11 +27,12 @@ impl<'a, 'b> SimpleState for MainState<'a, 'b>{
         //self.reader_id = Some(world.fetch_mut::<EventChannel<GameState>>().register_reader());
 
         let mut dispatcher_builder = DispatcherBuilder::new();
-        dispatcher_builder.add(GravitySystem::new(world), "gravity_system", &[]);
-        dispatcher_builder.add(KeyInputSystem::new(world), "keyinput_system", &["gravity_system"]);
+        dispatcher_builder.add(KeyInputSystem::new(world), "keyinput_system", &[]);
         dispatcher_builder.add(StackSystem::new(world), "stack_system", &["keyinput_system"]);
-        dispatcher_builder.add(CollapseSystem::new(world), "collapse_system", &["stack_system"]);
-        dispatcher_builder.add(SpawnerSystem::default(), "spawner_system", &["stack_system", "collapse_system"]);
+        dispatcher_builder.add(PutInsideSystem::default(), "put_inside", &["stack_system"]);
+        dispatcher_builder.add(CollapseSystem::default(), "collapse_system", &["stack_system"]);
+        dispatcher_builder.add(GravitySystem::new(world), "gravity_system", &["collapse_system"]);
+        dispatcher_builder.add(SpawnerSystem::default(), "spawner_system", &["collapse_system"]);
 
         // Backup
         //

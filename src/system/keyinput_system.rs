@@ -13,13 +13,17 @@ use crate::system::stack_system::StackEvent;
 use crate::component::dyn_block::{DynamicBlock, DynBlockHandler, Rotation};
 use crate::component::stt_block::StaticBlock;
 use crate::config::{MovementBindingTypes, AxisBinding, ActionBinding};
-use crate::world::block_data::BlockData;
-use crate::world::gravity_status::GravityStatus;
+use crate::world::{
+    block_data::BlockData,
+    gravity_status::GravityStatus,
+    key_int::KeyInt,
+    stack_status::StackStatus,
+};
 use crate::utils;
 use std::f64::consts::PI;
 use std::cmp::Ordering;
 
-const HOR_DELAY : f32 = 0.1;
+const HOR_DELAY : f32 = 0.15;
 const VER_DELAY : f32 = 0.07;
 const EPSILON: f32 = 0.0001;
 
@@ -27,15 +31,9 @@ const EPSILON: f32 = 0.0001;
 pub struct KeyInputSystem {
     pub key_interval: Option<f32>,
     noinput: NoInput,
-    key_int : bool,
     key_status: KeyStatus,
     axis_delay: (f32,f32),
     reader_id : ReaderId<KeyInt>,
-}
-
-pub enum KeyInt {
-    Stack,
-    None,
 }
 
 // If same key press was given then set that input as hold
@@ -53,7 +51,6 @@ impl KeyInputSystem {
             key_interval: None,
             noinput: NoInput::None,
             key_status : KeyStatus::default(),
-            key_int : false,
             axis_delay : (HOR_DELAY, VER_DELAY),
             reader_id,
         }
@@ -72,7 +69,15 @@ impl KeyInputSystem {
 
     fn delay_hold_input(&mut self, horizontal_value: &mut f32, vertical_value: &mut f32, right_value: &mut bool, left_value: &mut bool, shoot_value: &mut bool, dtime: f32) {
 
-        // Disable for axis input
+        //// Disaable axis input operation while holding
+        //if let KeyPressType::Hold = self.key_status.horizontal {
+            //*horizontal_value = 0.0;
+        //}
+        //if let KeyPressType::Hold = self.key_status.vertical {
+            //*vertical_value = 0.0;
+        //}
+
+        // Slow axis input operation while holding
         if let KeyPressType::Hold = self.key_status.horizontal {
             if self.axis_delay.0 >= 0.0 {
                 *horizontal_value = 0.0;
@@ -90,6 +95,7 @@ impl KeyInputSystem {
             }
         }
 
+        // Disable for action input while holding
         if let KeyPressType::Hold = self.key_status.right_rotate {
             *right_value = false;
         }
@@ -155,33 +161,40 @@ impl<'s> System<'s> for KeyInputSystem {
         Read<'s, InputHandler<MovementBindingTypes>>,
         Read<'s, Time>,
         Write<'s, EventChannel<KeyInt>>,
-        Write<'s, EventChannel<StackEvent>>,
+        WriteExpect<'s, StackStatus>,
         WriteExpect<'s, BlockData>, // -> Priorly was readexpect
         WriteExpect<'s, GravityStatus>,
+        WriteExpect<'s, KeyInt>,
     );
 
-    fn run(&mut self, (mut entities, parents, mut locals,blocks, stt, mut handler, input, time, mut key_event_channel, mut stack_event, mut block_data, mut gravity_status): Self::SystemData) {
-        if handler.blocks.len() == 0 {
+    fn run(&mut self, (
+            mut entities, 
+            parents, 
+            mut locals,
+            blocks, 
+            stt, 
+            mut handler, 
+            input, 
+            time, 
+            mut key_event_channel, 
+            mut stack_status, 
+            mut block_data, 
+            mut gravity_status,
+            mut key_int
+    ): Self::SystemData) {
+        if handler.blocks.len() == 0{
             return;
         }
 
-        for event in key_event_channel.read(&mut self.reader_id) {
-            match event {
-                KeyInt::Stack => {
-                    println!("Key Input :::: STACKED");
-                    self.key_int = true;
-                    return;
-                }
-                KeyInt::None => {
-                    println!("Key Input :::: RESET");
-                    self.key_int = false;
-                }
-                _ => ()
-            }
+        if let None = handler.parent {
+            return;
         }
 
-        if self.key_int {
-            return;
+        match *key_int {
+            KeyInt::Stack => {
+                return;
+            },
+            _ => ()
         }
 
         // get input value from key input
@@ -190,8 +203,8 @@ impl<'s> System<'s> for KeyInputSystem {
         let mut rotate_right = input.action_is_down(&ActionBinding::RotateRight).unwrap_or(false);
         let mut rotate_left = input.action_is_down(&ActionBinding::RotateLeft).unwrap_or(false);
         let mut shoot = input.action_is_down(&ActionBinding::Shoot).unwrap_or(false);
-        let mut debug = input.action_is_down(&ActionBinding::Debug).unwrap_or(false);
-        let mut no_grav = input.action_is_down(&ActionBinding::NoGrav).unwrap_or(false);
+        //let mut debug = input.action_is_down(&ActionBinding::Debug).unwrap_or(false);
+        //let mut no_grav = input.action_is_down(&ActionBinding::NoGrav).unwrap_or(false);
 
         //if no_grav {
             //match *gravity_status {
@@ -297,61 +310,18 @@ impl<'s> System<'s> for KeyInputSystem {
             }
         }
 
-        if no_grav {
-            // Delete entity values that entity vector contains not entity itself
-            // acutally entity itsefl is not a value rather an indicator.
-            let block_entities = block_data.get_row(45.0);
-            for entity in block_entities {
-                // Unwrap should not fail because data_length is full.
-                if let Some(value) = entity {
-                    entities.delete(value).expect("Failed to delete entity");
-                }
-            }
-
-            // Remove collaped row and move all uppers rows down by 1 row.
-            // And get merged entity vector and use the vector to really move value
-            // downward
-            let to_be_moved = block_data.remove_lows(45.0);
-            for item in to_be_moved {
-                if let Some(entity) = item {
-                    let parent_entity = parents.get(entity).unwrap().entity;
-                    let (x, y, z) = utils::get_y_absolute_move(locals.get(parent_entity).unwrap().euler_angles(), -45.0);
-                    locals.get_mut(entity).unwrap().append_translation_xyz(x, y, z);
-                }
-            }
-        }
-
-        if debug {
-            println!("{}", *block_data);
-
-            for item in block_data.data.iter().rev() {
-                for sub_item in item.iter() {
-                    if let Some(entity) = sub_item {
-                        print!("({},{})", 
-                            //locals.get(*entity).unwrap().global_matrix().m14.round(), 
-                            //locals.get(*entity).unwrap().global_matrix().m24.round());
-                            (locals.get(*entity).unwrap().global_matrix().m14.round() + 45.0) / 45.0 - 1.0, 
-                            (locals.get(*entity).unwrap().global_matrix().m24.round()) / 45.0 - 1.0);
-                    } else {
-                        print!("( , )")
-                    }
-                }
-                print!("\n")
-            }
-        }
-
         //// Currently emtpy code mostly deserved for debugging
         if shoot {
-            println!("{}", *block_data);
+            //println!("{}", *block_data);
 
             let mut distance: f32 = HEIGHT;
             let mut top_block : (f32, f32) = (-1.0, -1.0);
             let mut down_block : (f32, f32)= (-1.0, -1.0);
             for block_entity in handler.blocks.iter() {
                 let top_matrix = locals.get(*block_entity).unwrap().global_matrix();
-                println!("({}, {})", top_matrix.m14, top_matrix.m24);
+                //println!("({}, {})", top_matrix.m14, top_matrix.m24);
                 // Get top_most location of down_most columns
-                if let Some(entity) = block_data.get_top_block(top_matrix.m14) {
+                if let Some(entity) = block_data.get_top_block(top_matrix.m14, top_matrix.m24) {
                     let down_matrix = locals.get(entity).unwrap().global_matrix();
                     if top_matrix.m24 - down_matrix.m24 - 45.0 <= distance {
                         distance = (top_matrix.m24 - down_matrix.m24 - 45.0).round();
@@ -368,13 +338,20 @@ impl<'s> System<'s> for KeyInputSystem {
                 }
             }
 
-            println!("Distance is {}", (distance / 45.0).round());
-            println!("Top Block is {:?}", top_block);
-            println!("Down Block is {:?}", down_block);
+            //println!("Distance is {}", (distance / 45.0).round());
+            //println!("Top Block is {:?}", top_block);
+            //println!("Down Block is {:?}", down_block);
+
             let current = locals.get(handler.parent.unwrap()).unwrap().global_matrix().m24;
+            //println!("Before Transform : {}", current);
             locals.get_mut(handler.parent.unwrap()).unwrap().set_translation_y(current-distance);
-            stack_event.single_write(StackEvent::IgnoreDelay);
-            key_event_channel.single_write(KeyInt::Stack);
+
+            *stack_status = StackStatus::ShootStack;
+            *key_int = KeyInt::Stack;
+
+            //println!("End of shoot");
+            let current = locals.get(handler.parent.unwrap()).unwrap().global_matrix().m24;
+            //println!("New Transform : {}", current);
             return;
         }
 

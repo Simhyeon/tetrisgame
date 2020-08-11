@@ -4,13 +4,17 @@ use amethyst::{
     core::transform::Transform,
 //    core::SystemDesc,
     derive::SystemDesc,
-    ecs::prelude::{ReadExpect, System, Read, SystemData, WriteStorage, World},
+    ecs::prelude::{ReadExpect, System, Read, SystemData, WriteStorage, World, ReadStorage, Join},
     shrev::{ReaderId, EventChannel},
 };
 
 use crate::component::dyn_block::{DynamicBlock, DynBlockHandler};
+use crate::component::stt_block::StaticBlock;
 use crate::system::stack_system::StackEvent;
-use crate::world::gravity_status::GravityStatus;
+use crate::world::{
+    gravity_status::GravityStatus,
+    stack_status::StackStatus,
+};
 
 #[derive(SystemDesc)]
 pub struct GravitySystem{
@@ -36,48 +40,61 @@ impl GravitySystem {
 impl<'s> System<'s> for GravitySystem{
     type SystemData = (
         ReadExpect<'s, DynBlockHandler>,
-        WriteStorage<'s, DynamicBlock>,
+        ReadStorage<'s, DynamicBlock>,
+        ReadStorage<'s, StaticBlock>,
         WriteStorage<'s, Transform>,
         Read<'s, Time>,
         Read<'s, EventChannel<StackEvent>>,
         ReadExpect<'s, GravityStatus>,
+        ReadExpect<'s, StackStatus>,
     );
 
-    fn run(&mut self, (handler, _, mut locals, time, event_channel, gravity_status): Self::SystemData){
+    fn run(&mut self, (handler, blocks,stt, mut locals, time, event_channel, gravity_status, stack_status): Self::SystemData){
 
-        // Read all events
-        //for event in event_channel.read(&mut self.reader_id) {
-            //match event {
-                //StackEvent::ToBeStacked => {
-                    //println!("Stop Gravity");
-                    //self.stop_gravity = true;
-                    //self.time_delay = 0.0; // Also reset time dealy for continous ingegration? I guess
-                    //return;
-                //}
-                //StackEvent::Stacked | StackEvent::Free => {
-                    //println!("Use Gravity again");
-                    //self.stop_gravity = false;
-                    //break;
-                //}
-                
-                //_ => ()
-            //}
-        //}
-
+        // If gravity status is off then igrnoe run
         if let GravityStatus::Off = *gravity_status {
+            self.time_delay = 0.0;
             return;
         }
 
-        self.time_delay += time.delta_seconds();
-        if self.time_delay >= self.move_delay {
-            //println!("Delay : {}", self.time_delay);
-            self.time_delay = 0.0;
-            locals.get_mut(handler.parent.unwrap()).unwrap().prepend_translation_y(-45.0);
-            println!("^^^^^^^^^^^^^^");
-            println!("GRAVITY IMPOSED with {}", self.move_delay);
-            if self.move_delay >= 0.3 {
-                self.move_delay -= 0.005;
+        if let None = handler.parent {
+            return;
+        }
+
+        if let StackStatus::None = *stack_status {
+
+            // Prevent block duplication in any consequences
+            for entity in handler.blocks.iter() {
+                let x_pos = locals.get(*entity).unwrap().global_matrix().m14.round();
+                let y_pos = locals.get(*entity).unwrap().global_matrix().m24.round();
+                if y_pos == 45.0 {
+                    return;
+                }
+
+                for (local, _block, _) in ( &mut locals, &blocks ,&stt).join(){
+                    if y_pos == local.global_matrix().m24.round() + 45.0
+                        && x_pos == local.global_matrix().m14.round(){
+                            return;
+                    } 
+                }
+            }
+
+            // Increase time_delay count
+            self.time_delay += time.delta_seconds();
+
+            // if time ha reached then move downward
+            if self.time_delay >= self.move_delay {
+                //println!("Delay : {}", self.time_delay);
+                self.time_delay = 0.0;
+                locals.get_mut(handler.parent.unwrap()).unwrap().prepend_translation_y(-45.0);
+                println!("^^^^^^^^^^^^^^");
+                println!("GRAVITY IMPOSED with {}", self.move_delay);
+                println!("Current Stack status {:?}", *stack_status);
+                if self.move_delay >= 0.3 {
+                    self.move_delay -= 0.005;
+                }
             }
         }
+
     }
 }
