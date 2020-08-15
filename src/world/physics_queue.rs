@@ -5,7 +5,7 @@ use crate::commons::Rotation;
 
 // Queue struct where physics realted orientation is saved
 pub struct PhysicsQueue {
-    queue : Option<Vec<Vector3<f32>>>,
+    queue : Option<Vec<(f32, f32)>>,
     rotation: Option<Rotation>,
     shoot : bool,
     offset: Option<(f32, f32)>,
@@ -14,11 +14,11 @@ pub struct PhysicsQueue {
 
 impl PhysicsQueue {
 
-    pub fn get_queue(&self) -> Option<Vec<Vector3<f32>>>{
+    pub fn get_queue(&self) -> Option<Vec<(f32, f32)>>{
         self.queue
     }
 
-    pub fn add_to_queue(&mut self, physics : Vector3<f32>) {
+    pub fn add_to_queue(&mut self, physics : (f32,f32)) {
         if let None = self.queue {
             self.queue = Some(Vec::new());
         }

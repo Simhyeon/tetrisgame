@@ -29,7 +29,6 @@ const EPSILON: f32 = 0.0001;
 #[derive(SystemDesc)]
 pub struct KeyInputSystem {
     pub key_interval: Option<f32>,
-    noinput: NoInput,
     key_status: KeyStatus,
     axis_delay: (f32,f32),
     reader_id : ReaderId<KeyInt>,
@@ -48,7 +47,6 @@ impl KeyInputSystem {
         let reader_id = world.fetch_mut::<EventChannel<KeyInt>>().register_reader();
         Self { 
             key_interval: None,
-            noinput: NoInput::None,
             key_status : KeyStatus::default(),
             axis_delay : (HOR_DELAY, VER_DELAY),
             reader_id,
@@ -137,31 +135,17 @@ impl KeyInputSystem {
     }
 }
 
-enum NoInput{
-    Right,
-    Left,
-    Both,
-    None,
-}
-
-const WIDTH: f32 = 450.0;
-const HEIGHT: f32 = 900.0;
-
 impl<'s> System<'s> for KeyInputSystem {
     type SystemData = (
         //DEBUG
         Entities<'s>,
         ReadStorage<'s, Parent>,
         //DEBUGEND
-        WriteStorage<'s ,Transform>,
-        ReadStorage<'s ,DynamicBlock>,
-        ReadStorage<'s ,StaticBlock>,
         WriteExpect<'s, DynBlockHandler>,
         Read<'s, InputHandler<MovementBindingTypes>>,
         Read<'s, Time>,
         Write<'s, EventChannel<KeyInt>>,
         WriteExpect<'s, StackStatus>,
-        WriteExpect<'s, BlockData>, // -> Priorly was readexpect
         WriteExpect<'s, GravityStatus>,
         WriteExpect<'s, KeyInt>,
     );
@@ -169,15 +153,11 @@ impl<'s> System<'s> for KeyInputSystem {
     fn run(&mut self, (
             mut entities, 
             parents, 
-            mut locals,
-            blocks, 
-            stt, 
             mut handler, 
             input, 
             time, 
             mut key_event_channel, 
             mut stack_status, 
-            mut block_data, 
             mut gravity_status,
             mut key_int
     ): Self::SystemData) {
@@ -202,315 +182,13 @@ impl<'s> System<'s> for KeyInputSystem {
         let mut rotate_right = input.action_is_down(&ActionBinding::RotateRight).unwrap_or(false);
         let mut rotate_left = input.action_is_down(&ActionBinding::RotateLeft).unwrap_or(false);
         let mut shoot = input.action_is_down(&ActionBinding::Shoot).unwrap_or(false);
-        //let mut debug = input.action_is_down(&ActionBinding::Debug).unwrap_or(false);
-        //let mut no_grav = input.action_is_down(&ActionBinding::NoGrav).unwrap_or(false);
-
-        //if no_grav {
-            //match *gravity_status {
-                //GravityStatus::Off => {
-                    //*gravity_status = GravityStatus::On;
-                //}
-                //GravityStatus::On => {
-                    //*gravity_status = GravityStatus::Off;
-                //}
-            //}
-        //}
 
         // Sanitize input
         self.update_key_status(horizontal, vertical, rotate_right, rotate_left, shoot);
         self.delay_hold_input(&mut horizontal, &mut vertical, &mut rotate_right, &mut rotate_left, &mut shoot, time.delta_seconds());
         self.mutual_exclude(&mut horizontal, &mut vertical, &mut rotate_right, &mut rotate_left, &mut shoot);
-
-        // Only get negative vertical value 
-        // Player cannot move blocks upward.
-        if vertical > 0.0 {
-            vertical = 0.0;
-        }
-
-        // Check if key input is possible
-        // like, translation should not work if no enough spaces are given to blocks
-        self.noinput = NoInput::None;
-        for entity in &handler.blocks {
-            if let Some(transform) = locals.get(*entity) {
-
-                // Cache entity's transform data
-                let local_value = transform.global_matrix().clone();
-
-                // If moving blocks are next to walls than cannot move toward walls
-                if KeyInputSystem::similar(local_value.m14, 0.0){
-                    self.append_no_input(NoInput::Left);
-                } else if KeyInputSystem::similar(local_value.m14, WIDTH - 45.0 ){
-                    self.append_no_input(NoInput::Right);
-                }
-
-                // If moving blocks are next to stacked blocks than cannot move toward stacked blocks
-                for (local, _block, _) in ( &mut locals, &blocks ,&stt).join(){
-                    if KeyInputSystem::similar(local.global_matrix().m14, local_value.m14 + 45.0 )
-                        && KeyInputSystem::similar(local.global_matrix().m24, local_value.m24) {
-                            self.append_no_input(NoInput::Right);
-                        } else if KeyInputSystem::similar(local.global_matrix().m14 , local_value.m14 - 45.0) 
-                            && KeyInputSystem::similar(local.global_matrix().m24 , local_value.m24 ){
-                                self.append_no_input(NoInput::Left);
-                        }
-                }
-
-                // If input invalidation detected than break out
-                match self.noinput {
-                    NoInput::None => (),
-                    _ => break,
-                }
-
-            } else {
-                return;
-            }
-        }
-
-        // If input blockage detected then invalidate given axis value
-        match self.noinput {
-            NoInput::Left => {
-                if horizontal < 0.0 { horizontal = 0.0; }
-            },
-            NoInput::Right =>{
-                if horizontal > 0.0 { horizontal = 0.0; }
-            },
-            NoInput::Both =>{
-                horizontal = 0.0;
-            },
-            _ => (),
-        }
-
-
-
-        // If vertcial input is not possible then set value to 0.0
-        if vertical < 0.0 {
-            for entity in handler.blocks.iter() {
-
-                let x_pos = locals.get(*entity).unwrap().global_matrix().m14.round();
-                let y_pos = locals.get(*entity).unwrap().global_matrix().m24.round();
-                if y_pos == 45.0 {
-                    vertical = 0.0;
-                    break;
-                }
-
-                for (local, _block, _) in ( &mut locals, &blocks ,&stt).join(){
-                    if y_pos == local.global_matrix().m24.round() + 45.0
-                        && x_pos == local.global_matrix().m14.round(){
-                            vertical = 0.0;
-                            break;
-                    } 
-                }
-            }
-        }
-
-        // Now translate blocks according to user inputs for real.
-        if let Some(parent) = handler.parent {
-            if let Some(local) = locals.get_mut(parent) {
-                local.prepend_translation_x(45.0 * horizontal).prepend_translation_y(45.0 * vertical);
-            }
-        }
-
-        //// Currently emtpy code mostly deserved for debugging
-        if shoot {
-            //println!("{}", *block_data);
-
-            let mut distance: f32 = HEIGHT;
-            let mut top_block : (f32, f32) = (-1.0, -1.0);
-            let mut down_block : (f32, f32)= (-1.0, -1.0);
-            for block_entity in handler.blocks.iter() {
-                let top_matrix = locals.get(*block_entity).unwrap().global_matrix();
-                //println!("({}, {})", top_matrix.m14, top_matrix.m24);
-                // Get top_most location of down_most columns
-                if let Some(entity) = block_data.get_top_block(top_matrix.m14, top_matrix.m24) {
-                    let down_matrix = locals.get(entity).unwrap().global_matrix();
-                    if top_matrix.m24 - down_matrix.m24 - 45.0 <= distance {
-                        distance = (top_matrix.m24 - down_matrix.m24 - 45.0).round();
-                        top_block = (top_matrix.m14.round(), top_matrix.m24.round());
-                        down_block = (down_matrix.m14, down_matrix.m24);
-                    }
-
-                } else {
-                    if top_matrix.m24 - 45.0 <= distance {
-                        distance = top_matrix.m24 - 45.0;
-                        top_block = (top_matrix.m14.round(), top_matrix.m24.round());
-                        down_block = (0.0, 0.0);
-                    }
-                }
-            }
-
-            //println!("Distance is {}", (distance / 45.0).round());
-            //println!("Top Block is {:?}", top_block);
-            //println!("Down Block is {:?}", down_block);
-
-            let current = locals.get(handler.parent.unwrap()).unwrap().global_matrix().m24;
-            //println!("Before Transform : {}", current);
-            locals.get_mut(handler.parent.unwrap()).unwrap().set_translation_y(current-distance);
-
-            *stack_status = StackStatus::ShootStack;
-            *key_int = KeyInt::Stack;
-
-            //println!("End of shoot");
-            let current = locals.get(handler.parent.unwrap()).unwrap().global_matrix().m24;
-            //println!("New Transform : {}", current);
-            return;
-        }
-
-        // If rotate button was given
-        if rotate_right || rotate_left {
-
-            let mut block_rotate = false;
-            let start: f32;
-            let end: f32;
-
-            if rotate_right {
-                let (s, e) = handler.get_count(Rotation::Right);
-                start = s;
-                end = e;
-            } else { // if rotate left
-                let (s, e) = handler.get_count(Rotation::Left);
-                start = s;
-                end = e;
-            }
-
-            // No offset has been given so that
-            if start == 0.0 && end == 0.0 {
-                // This is to return before looping which is heavy operations 
-                // But this is dangergous approach since there might be neccessary operation 
-                // After this code
-                // So becareful when you need to change this code or add some operation after this
-                // line.
-                return;
-            }
-
-            // Check Rotation validation prevent roation when not possible
-            // Get offset
-            let x: f32;
-            let y: f32;
-
-            match handler.rotation {
-                Rotation::Up | Rotation::Down => {
-                    x = 1.0;
-                    y = 0.0;
-            }
-                Rotation::Right | Rotation::Left => {
-                    x = 0.0;
-                    y = 1.0;
-            }
-            }
-
-            // Loop through transforms
-            let parent = locals.get(handler.parent.unwrap()).unwrap().global_matrix().clone();
-            for count in start as i32 .. end as i32 + 1 {
-                for (local, _block, _) in ( &mut locals, &blocks ,&stt).join(){
-                    if parent.m14.round() + count as f32 * x * 45.0 == local.global_matrix().m14.round() 
-                        && parent.m24.round() + count as f32 * y * 45.0 == local.global_matrix().m24.round(){
-                            block_rotate = true;
-                            break;
-                    } 
-                }
-
-                if parent.m14.round() + count as f32 * x * 45.0 == -45.0 
-                    || parent.m14.round() + count as f32 * x * 45.0 == WIDTH 
-                        || parent.m24.round() + count as f32 * y * 45.0 == 0.0
-                        || parent.m24.round() + count as f32 * y * 45.0 == HEIGHT + 45.0 {
-                            block_rotate = true;
-                            break;
-                }
-            }
-
-            if let Some(_) = handler.config.sub_offset {
-                // Reuse variables names because the variables are not gonna used again.
-                let start: f32;
-                let end: f32;
-
-                if rotate_right {
-                    let (s, e) = handler.get_sub_count(Rotation::Right);
-                    start = s;
-                    end = e;
-                } else { // if rotate left
-                    let (s, e) = handler.get_sub_count(Rotation::Left);
-                    start = s;
-                    end = e;
-                }
-                let x: f32;
-                let y: f32;
-
-                // This is exactly reverser that of normal counting
-                match handler.rotation {
-                    Rotation::Up | Rotation::Down => {
-                        x = 0.0;
-                        y = 1.0;
-                }
-                    Rotation::Right | Rotation::Left => {
-                        x = 1.0;
-                        y = 0.0;
-                }
-                }
-
-                // Loop through transforms
-                let parent = locals.get(handler.parent.unwrap()).unwrap().global_matrix().clone();
-                for count in start as i32 .. end as i32 + 1 {
-                    for (local, _block, _) in ( &mut locals, &blocks ,&stt).join(){
-                        if parent.m14.round() + count as f32 * x * 45.0 == local.global_matrix().m14.round() 
-                            && parent.m24.round() + count as f32 * y * 45.0 == local.global_matrix().m24.round(){
-                                block_rotate = true;
-                                break;
-                        } 
-                    }
-                    if parent.m14.round() + count as f32 * x * 45.0 == -45.0 
-                        || parent.m14.round() + count as f32 * x * 45.0 == WIDTH 
-                            || parent.m24.round() + count as f32 * y * 45.0 == 0.0
-                            || parent.m24.round() + count as f32 * y * 45.0 == HEIGHT + 45.0 {
-                                block_rotate = true;
-                                break;
-                    }
-                }
-            }
-
-            //Rotate parent if not prevented from prior logics
-            if !block_rotate {
-                if rotate_right {
-                    handler.rotate_handler(Rotation::Right);
-                    locals.get_mut(handler.parent.unwrap()).unwrap().prepend_rotation_z_axis((PI * 0.5) as f32);
-                } else {
-                    handler.rotate_handler(Rotation::Left);
-                    locals.get_mut(handler.parent.unwrap()).unwrap().prepend_rotation_z_axis(-(PI * 0.5) as f32);
-                }
-            } else {
-                //println!("--Blocked Rotation--");
-            }
-        }
-    }
-}
-
-impl KeyInputSystem {
-    fn similar(value1: f32, value2: f32) -> bool{
-        if (value1 - value2).abs() <= EPSILON {
-            true
-        } else {
-            false
-        }
-    }
-
-    fn append_no_input(&mut self, no_input: NoInput) {
-        match self.noinput {
-            NoInput::Left => {
-                if let NoInput::Right = no_input {
-                    self.noinput = NoInput::Both;
-                }
-            },
-
-            NoInput::Right => {
-                if let NoInput::Left = no_input {
-                    self.noinput = NoInput::Both;
-                }
-            },
-
-            NoInput::None => {
-                self.noinput = no_input;
-            },
-
-            _ => (),
-        }
+        
+        // TODO Set iput to input_cache
     }
 }
 

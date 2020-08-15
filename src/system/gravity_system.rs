@@ -4,7 +4,7 @@ use amethyst::{
     core::transform::Transform,
 //    core::SystemDesc,
     derive::SystemDesc,
-    ecs::prelude::{ReadExpect, System, Read, SystemData, WriteStorage, World, ReadStorage, Join},
+    ecs::prelude::{ReadExpect, System, Read, SystemData, WriteStorage, World, ReadStorage, Join, WriteExpect},
     shrev::{ReaderId, EventChannel},
 };
 
@@ -14,6 +14,7 @@ use crate::system::stack_system::StackEvent;
 use crate::world::{
     gravity_status::GravityStatus,
     stack_status::StackStatus,
+    physics_queue::PhysicsQueue,
 };
 
 #[derive(SystemDesc)]
@@ -39,17 +40,14 @@ impl GravitySystem {
 
 impl<'s> System<'s> for GravitySystem{
     type SystemData = (
-        ReadExpect<'s, DynBlockHandler>,
-        ReadStorage<'s, DynamicBlock>,
-        ReadStorage<'s, StaticBlock>,
-        WriteStorage<'s, Transform>,
         Read<'s, Time>,
         Read<'s, EventChannel<StackEvent>>,
         ReadExpect<'s, GravityStatus>,
         ReadExpect<'s, StackStatus>,
+        WriteExpect<'s, PhysicsQueue>,
     );
 
-    fn run(&mut self, (handler, blocks,stt, mut locals, time, event_channel, gravity_status, stack_status): Self::SystemData){
+    fn run(&mut self, (time, event_channel, gravity_status, stack_status, mut queue): Self::SystemData){
 
         // If gravity status is off then igrnoe run
         if let GravityStatus::Off = *gravity_status {
@@ -57,39 +55,17 @@ impl<'s> System<'s> for GravitySystem{
             return;
         }
 
-        if let None = handler.parent {
-            return;
-        }
+        // Increase time_delay count
+        self.time_delay += time.delta_seconds();
 
-        if let StackStatus::None = *stack_status {
+        // if time ha reached then move downward
+        if self.time_delay >= self.move_delay {
+            queue.add_to_queue((0.0, -45.0));
 
-            // Prevent block duplication in any consequences
-            for entity in handler.blocks.iter() {
-                let x_pos = locals.get(*entity).unwrap().global_matrix().m14.round();
-                let y_pos = locals.get(*entity).unwrap().global_matrix().m24.round();
-                if y_pos == 45.0 {
-                    return;
-                }
+            self.time_delay = 0.0;
 
-                for (local, _block, _) in ( &mut locals, &blocks ,&stt).join(){
-                    if y_pos == local.global_matrix().m24.round() + 45.0
-                        && x_pos == local.global_matrix().m14.round(){
-                            return;
-                    } 
-                }
-            }
-
-            // Increase time_delay count
-            self.time_delay += time.delta_seconds();
-
-            // if time ha reached then move downward
-            if self.time_delay >= self.move_delay {
-                //println!("Delay : {}", self.time_delay);
-                self.time_delay = 0.0;
-                locals.get_mut(handler.parent.unwrap()).unwrap().prepend_translation_y(-45.0);
-                if self.move_delay >= 0.3 {
-                    self.move_delay -= 0.005;
-                }
+            if self.move_delay >= 0.3 {
+                self.move_delay -= 0.005;
             }
         }
 

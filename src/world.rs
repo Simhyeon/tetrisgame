@@ -6,3 +6,4 @@ pub mod stack_status;
 pub mod collapse_status;
 pub mod physics_queue;
 pub mod input_cache;
+pub mod blockage;
