@@ -20,6 +20,7 @@ mod config;
 mod utils;
 mod world;
 mod events;
+mod commons;
 
 use crate::state::{ loading_state::LoadingState, };
 use crate::config::{MovementBindingTypes, BlocksConfig, PaneConfig};

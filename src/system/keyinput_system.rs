@@ -5,12 +5,11 @@ use amethyst::{
 //    core::SystemDesc,
     derive::SystemDesc,
     ecs::prelude::{WriteExpect, System, ReadStorage, Join, Read, SystemData, WriteStorage, World, Write, ReadExpect, Entities},
-    input::{InputHandler},
+    input::InputHandler,
     shrev::{ReaderId, EventChannel},
 };
 
-use crate::system::stack_system::StackEvent;
-use crate::component::dyn_block::{DynamicBlock, DynBlockHandler, Rotation};
+use crate::component::dyn_block::{DynamicBlock, DynBlockHandler};
 use crate::component::stt_block::StaticBlock;
 use crate::config::{MovementBindingTypes, AxisBinding, ActionBinding};
 use crate::world::{
@@ -19,7 +18,7 @@ use crate::world::{
     key_int::KeyInt,
     stack_status::StackStatus,
 };
-use crate::utils;
+use crate::commons::Rotation;
 use std::f64::consts::PI;
 use std::cmp::Ordering;
 
