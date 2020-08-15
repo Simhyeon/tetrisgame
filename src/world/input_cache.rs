@@ -8,7 +8,7 @@ pub enum AxisType {
 }
 
 pub struct InputCache {
-    axis : AxisType, 
-    rotation : Rotation,
-    shoot : bool,
+    pub axis : AxisType, 
+    pub rotation : Rotation,
+    pub shoot : bool,
 }

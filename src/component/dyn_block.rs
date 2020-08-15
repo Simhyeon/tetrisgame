@@ -3,6 +3,7 @@ use amethyst::{
 };
 use crate::config::{Block, Offset};
 use crate::utils;
+use crate::commons::Rotation;
 
 pub struct DynamicBlock;
 

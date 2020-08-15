@@ -11,7 +11,8 @@ use rand::prelude::*;
 pub const WIDTH: f32 = 450.0;
 pub const HEIGHT: f32 = 900.0;
 
-use crate::component::dyn_block::{DynBlockHandler, DynamicBlock, Rotation};
+use crate::component::dyn_block::{DynBlockHandler, DynamicBlock};
+use crate::commons::Rotation;
 use crate::config::BlocksConfig;
 
 #[derive(SystemDesc, Default)]

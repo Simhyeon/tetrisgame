@@ -8,9 +8,9 @@ use amethyst::{
 use crate::world::physics_queue::PhysicsQueue;
 
 #[derive(SystemDesc, Default)]
-pub struct PhysicsSystem;
+pub struct PhysicsExecutor;
 
-impl<'s> System<'s> for PhysicsSystem {
+impl<'s> System<'s> for PhysicsExecutor {
     type SystemData = (
         ReadExpect<'s, PhysicsQueue>,
     );
