@@ -10,7 +10,7 @@ use amethyst::{
 };
 
 use crate::system::stack_system::StackEvent;
-use crate::component::dyn_block::{DynamicBlock, DynBlockHandler, Rotation};
+use crate::component::dyn_block::{DynamicBlock, DynBlockHandler};
 use crate::component::stt_block::StaticBlock;
 use crate::config::{MovementBindingTypes, AxisBinding, ActionBinding};
 use crate::world::{

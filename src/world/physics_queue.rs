@@ -1,30 +1,54 @@
 use amethyst::core::math::Vector3;
 
 use crate::config::Offset;
+use crate::commons::Rotation;
 
 // Queue struct where physics realted orientation is saved
 pub struct PhysicsQueue {
     queue : Option<Vec<Vector3<f32>>>,
+    rotation: Option<Rotation>,
     shoot : bool,
     offset: Option<(f32, f32)>,
     sub_offset: Option<(f32, f32)>,
 }
 
 impl PhysicsQueue {
-    pub fn add(&mut self, physics : Vector3<f32>) {
+
+    pub fn get_queue(&self) -> Option<Vec<Vector3<f32>>>{
+        self.queue
+    }
+
+    pub fn add_to_queue(&mut self, physics : Vector3<f32>) {
         if let None = self.queue {
             self.queue = Some(Vec::new());
         }
-        self.queue.unwrap().push(physics);
+        self.queue.as_mut().unwrap().push(physics);
     }
 
-    //TODO Not alwyas shoot method is called finally.
-    // Shoot should be mutually exclusive
-    pub fn shoot(&mut self) {
-        self.queue = None;
-        self.shoot = true;
-        self.offset = None; 
-        self.sub_offset = None; 
+    pub fn get_rotation(&self) -> Option<Rotation> {
+        if let Some(rotation) = self.rotation {
+            Some(rotation)
+        } else {
+            None
+        }
+    }
+
+    pub fn set_rotation(&mut self, rotation: Rotation) {
+        self.reset();
+        self.rotation.replace(rotation);
+    }
+
+    pub fn get_shoot(&self) -> bool {
+        self.shoot
+    }
+
+    pub fn shoot_check(&mut self) {
+        if self.shoot {
+            self.queue = None;
+            self.offset = None; 
+            self.sub_offset = None; 
+            self.rotation = None;
+        }
     }
 
     pub fn reset(&mut self) {
@@ -32,10 +56,27 @@ impl PhysicsQueue {
         self.shoot = false;
         self.offset = None; 
         self.sub_offset = None; 
+        self.rotation = None;
+    }
+
+    pub fn get_offset(&self) -> (f32, f32) {
+        if let Some(value) = self.offset {
+            value
+        } else {
+            (0.0, 0.0)
+        }
     }
 
     pub fn set_offset(&mut self, offset: (f32, f32)) {
         self.offset = Some(offset);
+    }
+
+    pub fn get_sub_offset(&self) -> (f32, f32) {
+        if let Some(value) = self.sub_offset {
+            value
+        } else {
+            (0.0, 0.0)
+        }
     }
 
     pub fn set_sub_offset(&mut self, offset: (f32, f32)) {

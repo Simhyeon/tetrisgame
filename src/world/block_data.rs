@@ -6,6 +6,8 @@ use amethyst::{
 use std::fmt;
 use std::fmt::{Display, Formatter};
 
+use crate::consts::*;
+
 const BLOCK_HEIGHT: usize = 20;
 const BLOCK_WIDTH: usize = 10;
 
@@ -113,6 +115,15 @@ impl BlockData {
     }
     
     pub fn find_block(&self, matrix_m14:f32, matrix_m24: f32) -> bool {
+
+        // If x value is lower then min value or same with width
+        // If y value is lower then min value
+        if matrix_m14 == -BLOCK_SIZE || 
+            matrix_m14 == PLAY_PANE_WIDTH || 
+                matrix_m24 == 0.0 {
+            return false;
+        }
+
         let col_index = Self::get_col_index_from_m24(matrix_m24);
         let row_index = Self::get_row_index_from_m14(matrix_m14);
         if let None = self.data[col_index][row_index] {

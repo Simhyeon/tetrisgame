@@ -1,8 +1,7 @@
 use amethyst::{
     core::math::Vector3,
-    core::transform::{Transform},
     derive::SystemDesc,
-    ecs::prelude::{Join, System, SystemData, WriteStorage, ReadStorage, WriteExpect, Write, Read, World, LazyUpdate, ReadExpect},
+    ecs::prelude::{System, SystemData, WriteExpect, ReadExpect},
 };
 
 use crate::world::{
@@ -28,13 +27,13 @@ impl<'s> System<'s> for PhysicsAllocator {
     fn run(&mut self, (handler, input_cache, mut queue): Self::SystemData) {
         match input_cache.axis {
             AxisType::Right => {
-                queue.add(Vector3::new(BLOCK_SIZE, 0.0, 0.0));
+                queue.add_to_queue(Vector3::new(BLOCK_SIZE, 0.0, 0.0));
             }
             AxisType::Left => {
-                queue.add(Vector3::new(-BLOCK_SIZE, 0.0, 0.0));
+                queue.add_to_queue(Vector3::new(-BLOCK_SIZE, 0.0, 0.0));
             }
             AxisType::Down => {
-                queue.add(Vector3::new(0.0, -BLOCK_SIZE, 0.0));
+                queue.add_to_queue(Vector3::new(0.0, -BLOCK_SIZE, 0.0));
             }
             AxisType::None => {
                 ()
@@ -48,5 +47,7 @@ impl<'s> System<'s> for PhysicsAllocator {
             }
             _ => ()
         }
+
+        queue.shoot_check();
     }
 }
