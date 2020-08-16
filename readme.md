@@ -13,15 +13,15 @@ cargo run --release
 
 ### Caution
 
-~~This game is quite buggy. I tried to find some solutions but no success.
+~~This game is quite buggy. I tried to find some solutions but no success.~~
 
-~~I made this game as a learning project and hardly care about refactor ability of the codes.
+~~I made this game as a learning project and hardly care about refactor ability of the codes.~~
 
-~~If I need to fix the bugs then I have to redesign everything from start or I need to put much more temporary "fix" codes, and this game has many such codes already.
+~~If I need to fix the bugs then I have to redesign everything from start or I need to put much more temporary "fix" codes, and this game has many such codes already.~~
 
-~~Therefore I just finished the project. While most of the "Operation" will just work, but might cause error and show game over screen. 
+~~Therefore I just finished the project. While most of the "Operation" will just work, but might cause error and show game over screen.~~
 
-~~At worst it will crash even without game over screen.
+~~At worst it will crash even without game over screen.~~
 
 I refacotred the project not from start but from middle part. I moved all the physics logics to separate system which should have been at the first place.
 
