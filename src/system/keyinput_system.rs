@@ -9,17 +9,11 @@ use amethyst::{
     shrev::{ReaderId, EventChannel},
 };
 
-use crate::component::dyn_block::{DynamicBlock, DynBlockHandler};
-use crate::component::stt_block::StaticBlock;
 use crate::config::{MovementBindingTypes, AxisBinding, ActionBinding};
 use crate::world::{
+    input_cache::InputCache,
     block_data::BlockData,
-    gravity_status::GravityStatus,
-    key_int::KeyInt,
-    stack_status::StackStatus,
 };
-use crate::commons::Rotation;
-use std::f64::consts::PI;
 use std::cmp::Ordering;
 
 const HOR_DELAY : f32 = 0.15;
@@ -31,7 +25,6 @@ pub struct KeyInputSystem {
     pub key_interval: Option<f32>,
     key_status: KeyStatus,
     axis_delay: (f32,f32),
-    reader_id : ReaderId<KeyInt>,
 }
 
 // If same key press was given then set that input as hold
@@ -42,14 +35,11 @@ enum KeyPressType {
 }
 
 impl KeyInputSystem {
-    pub fn new(world: &mut World) -> Self {
-        <Self as System<'_>>::SystemData::setup(world);
-        let reader_id = world.fetch_mut::<EventChannel<KeyInt>>().register_reader();
+    pub fn new() -> Self {
         Self { 
             key_interval: None,
             key_status : KeyStatus::default(),
             axis_delay : (HOR_DELAY, VER_DELAY),
-            reader_id,
         }
     }
 
@@ -104,77 +94,17 @@ impl KeyInputSystem {
             *shoot_value = false;
         }
     }
-
-    fn mutual_exclude(&mut self, horizontal_value: &mut f32, vertical_value: &mut f32, right_value: &mut bool, left_value: &mut bool, shoot_value: &mut bool) {
-        if *horizontal_value != 0.0 {
-            *vertical_value = 0.0;
-            *right_value = false;
-            *left_value = false;
-            *shoot_value = false;
-        } else if *vertical_value != 0.0{
-            *horizontal_value = 0.0;
-            *right_value = false;
-            *left_value = false;
-            *shoot_value = false;
-        } else if *right_value {
-            *vertical_value = 0.0;
-            *horizontal_value = 0.0;
-            *left_value = false;
-            *shoot_value = false;
-        } else if *left_value {
-            *vertical_value = 0.0;
-            *horizontal_value = 0.0;
-            *right_value = false;
-            *shoot_value = false;
-        } else if *shoot_value {
-            *vertical_value = 0.0;
-            *horizontal_value = 0.0;
-            *left_value = false;
-            *right_value = false;
-        }
-    }
 }
 
 impl<'s> System<'s> for KeyInputSystem {
     type SystemData = (
-        //DEBUG
-        Entities<'s>,
-        ReadStorage<'s, Parent>,
-        //DEBUGEND
-        WriteExpect<'s, DynBlockHandler>,
         Read<'s, InputHandler<MovementBindingTypes>>,
         Read<'s, Time>,
-        Write<'s, EventChannel<KeyInt>>,
-        WriteExpect<'s, StackStatus>,
-        WriteExpect<'s, GravityStatus>,
-        WriteExpect<'s, KeyInt>,
+        WriteExpect<'s, InputCache>,
+        ReadExpect<'s, BlockData,>,
     );
 
-    fn run(&mut self, (
-            mut entities, 
-            parents, 
-            mut handler, 
-            input, 
-            time, 
-            mut key_event_channel, 
-            mut stack_status, 
-            mut gravity_status,
-            mut key_int
-    ): Self::SystemData) {
-        if handler.blocks.len() == 0{
-            return;
-        }
-
-        if let None = handler.parent {
-            return;
-        }
-
-        match *key_int {
-            KeyInt::Stack => {
-                return;
-            },
-            _ => ()
-        }
+    fn run(&mut self, (input, time, mut input_cache, block_data): Self::SystemData) {
 
         // get input value from key input
         let mut horizontal = input.axis_value(&AxisBinding::Horizontal).unwrap_or(0.0);
@@ -182,13 +112,20 @@ impl<'s> System<'s> for KeyInputSystem {
         let mut rotate_right = input.action_is_down(&ActionBinding::RotateRight).unwrap_or(false);
         let mut rotate_left = input.action_is_down(&ActionBinding::RotateLeft).unwrap_or(false);
         let mut shoot = input.action_is_down(&ActionBinding::Shoot).unwrap_or(false);
+        let debug = input.action_is_down(&ActionBinding::Debug).unwrap_or(false);
 
         // Sanitize input
         self.update_key_status(horizontal, vertical, rotate_right, rotate_left, shoot);
         self.delay_hold_input(&mut horizontal, &mut vertical, &mut rotate_right, &mut rotate_left, &mut shoot, time.delta_seconds());
-        self.mutual_exclude(&mut horizontal, &mut vertical, &mut rotate_right, &mut rotate_left, &mut shoot);
         
         // TODO Set iput to input_cache
+        // TODO Currently inputs are not distinguished. 
+        // Holding works which makes inputs quite weird.
+        input_cache.update_input(horizontal, vertical, rotate_right, rotate_left, shoot);
+
+        if debug {
+            println!("{}", *block_data);
+        }
     }
 }
 

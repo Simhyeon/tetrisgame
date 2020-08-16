@@ -38,6 +38,7 @@ impl DynBlockHandler {
                 Rotation::Right => { self.rotation = Rotation::Down; },
                 Rotation::Down => { self.rotation = Rotation::Left; },
                 Rotation::Left => { self.rotation = Rotation::Up; },
+                _ => ()
             }
         } else if let Rotation::Left = rotation {
             match self.rotation {
@@ -45,6 +46,7 @@ impl DynBlockHandler {
                 Rotation::Left => { self.rotation = Rotation::Down; },
                 Rotation::Down => { self.rotation = Rotation::Right; },
                 Rotation::Right => { self.rotation = Rotation::Up; },
+                _ => ()
             }
         }
     }
@@ -66,6 +68,7 @@ impl DynBlockHandler {
                     Rotation::Left => {
                         (start, end)
                     }
+                    _ => (0.0, 0.0)
                 }
             } else {
                 (0.0,0.0)
@@ -86,6 +89,7 @@ impl DynBlockHandler {
                     Rotation::Left => {
                         (start, end)
                     }
+                    _ => (0.0, 0.0)
                 }
             } else {
                 (0.0, 0.0)
@@ -118,6 +122,7 @@ impl DynBlockHandler {
                 Rotation::Left => {
                     (-end, -start)
                 }
+                _ => (0.0, 0.0)
             }
         } else if let Rotation::Left = direction {
             let (start, end) = self.config.sub_offset.unwrap().left_rotate;
@@ -134,6 +139,7 @@ impl DynBlockHandler {
                 Rotation::Down => {
                     (-end, -start)
                 }
+                _ => (0.0, 0.0)
             }
         } else {
             (0.0, 0.0)

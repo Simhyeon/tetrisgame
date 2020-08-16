@@ -4,6 +4,7 @@ use crate::config::Offset;
 use crate::commons::Rotation;
 
 // Queue struct where physics realted orientation is saved
+#[derive(Default)]
 pub struct PhysicsQueue {
     queue : Option<Vec<(f32, f32)>>,
     rotation: Option<Rotation>,
@@ -14,8 +15,8 @@ pub struct PhysicsQueue {
 
 impl PhysicsQueue {
 
-    pub fn get_queue(&self) -> Option<Vec<(f32, f32)>>{
-        self.queue
+    pub fn get_queue(&mut self) -> Option<Vec<(f32, f32)>>{
+        self.queue.clone()
     }
 
     pub fn add_to_queue(&mut self, physics : (f32,f32)) {
@@ -26,15 +27,11 @@ impl PhysicsQueue {
     }
 
     pub fn get_rotation(&self) -> Option<Rotation> {
-        if let Some(rotation) = self.rotation {
-            Some(rotation)
-        } else {
-            None
-        }
+        self.rotation.clone()
     }
 
     pub fn set_rotation(&mut self, rotation: Rotation) {
-        self.reset();
+        self.clear();
         self.rotation.replace(rotation);
     }
 
@@ -42,16 +39,23 @@ impl PhysicsQueue {
         self.shoot
     }
 
-    pub fn shoot_check(&mut self) {
+    pub fn set_shoot(&mut self, shoot: bool) {
+        self.shoot = shoot;
+    }
+
+    pub fn shoot_check(&mut self) -> bool {
         if self.shoot {
             self.queue = None;
             self.offset = None; 
             self.sub_offset = None; 
             self.rotation = None;
+            true
+        } else {
+            false
         }
     }
 
-    pub fn reset(&mut self) {
+    pub fn clear(&mut self) {
         self.queue = None;
         self.shoot = false;
         self.offset = None; 

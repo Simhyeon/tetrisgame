@@ -2,7 +2,7 @@ use amethyst::{
     assets::Handle,
     core::transform::{Transform, Parent},
     derive::SystemDesc,
-    ecs::prelude::{Read, System, SystemData, WriteExpect, LazyUpdate, ReadExpect, Entities, Entity},
+    ecs::prelude::{Read, System, SystemData, WriteExpect, LazyUpdate, ReadExpect, Entities, Entity, WriteStorage},
     renderer::{SpriteRender, SpriteSheet},
 
 };
@@ -21,22 +21,34 @@ pub struct SpawnerSystem {
     next_parent_entity: Option<Entity>,
 }
 
-
 // TODO 현재 Spanwer는 블록이 겹칠 경우를 상정하지 않고 있다. 구현되어야 한다.
 
 impl<'s> System<'s> for SpawnerSystem{
     type SystemData = (
         Entities<'s>,
         WriteExpect<'s, DynBlockHandler>,
-        Read<'s, LazyUpdate>,
+        WriteStorage<'s, Transform>,
+        WriteStorage<'s, DynamicBlock>,
+        WriteStorage<'s, SpriteRender>,
+        WriteStorage<'s, Parent>,
         ReadExpect<'s, Handle<SpriteSheet>>,
         Read<'s, BlocksConfig>,
     );
 
-    fn run(&mut self, (entities, mut handler, updater, sprite_sheet_handle, block_config): Self::SystemData){
+    fn run(&mut self, (
+            entities, 
+            mut handler, 
+            mut locals,
+            mut dyn_blocks, 
+            mut renders,
+            mut parents,
+            sprite_sheet_handle, 
+            block_config
+    ): Self::SystemData){
         if handler.blocks.len() == 0 {
             //println!("SPawning");
 
+            // TODO I'm not sure but how does next block is implemented? I can't remember well... 
             let mut rng = thread_rng();
             let block_index: usize;
 
@@ -103,15 +115,15 @@ impl<'s> System<'s> for SpawnerSystem{
             next_parent_pos.append_translation_xyz(505.0 , HEIGHT - 45.0 * 5.0, 0.0);
 
             // Update entity with new transform component
-            updater.insert(
+            locals.insert(
                 parent,
                 parent_pos,
-            );
+            ).expect("Faeild to add parent");
 
-            updater.insert(
+            locals.insert(
                 next_parent,
                 next_parent_pos,
-            );
+            ).expect("");
             self.next_parent_entity.replace(next_parent);
 
             // Set required informations to dynamic block handlers
@@ -123,25 +135,25 @@ impl<'s> System<'s> for SpawnerSystem{
             for item in block_transforms {
                 let new_block = entities.create();
                 // Transform
-                updater.insert(
+                locals.insert(
                     new_block,
                     item,
-                );
+                ).expect("");
                 //DynamicBlock
-                updater.insert(
+                dyn_blocks.insert(
                     new_block,
                     DynamicBlock,
-                );
+                ).expect("");
                 // Sprite Texture
-                updater.insert(
+                renders.insert(
                     new_block,
                     sprite_render.clone(),
-                );
+                ).expect("");
 
-                updater.insert(
+                parents.insert(
                     new_block,
                     Parent::new(parent),
-                );
+                ).expect("");
 
                 handler.blocks.push(new_block);
             }
@@ -150,20 +162,20 @@ impl<'s> System<'s> for SpawnerSystem{
             for item in next_block_transforms {
                 let next_new_block = entities.create();
                 // Transform
-                updater.insert(
+                locals.insert(
                     next_new_block,
                     item,
-                );
+                ).expect("");
                 // Sprite Texture
-                updater.insert(
+                renders.insert(
                     next_new_block,
                     next_sprite_render.clone(),
-                );
+                ).expect("");
 
-                updater.insert(
+                parents.insert(
                     next_new_block,
                     Parent::new(next_parent),
-                );
+                ).expect("");
             }
         }
     }

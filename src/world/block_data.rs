@@ -2,7 +2,6 @@ use amethyst::{
     prelude::*,
     ecs::{Entity, World},
 };
-// hread '<unnamed>' panicked at 'index out of bounds: the len is 20 but the index is 20', src/world/block_data.rs:119:23
 use std::fmt;
 use std::fmt::{Display, Formatter};
 
@@ -62,16 +61,26 @@ impl BlockData {
     }
 
     // Indexing functions 
-    pub fn get_col_index_from_m24(matrix_m24: f32) -> usize {
-        (matrix_m24 / 45.0) as usize - 1
+    pub fn get_col_index_from_m24(matrix_m24: f32) -> Result<usize, String> {
+        let medium = (matrix_m24 / 45.0) as usize;
+        if medium > 0 {
+            Ok(medium -1)
+        } else {
+            Err(format!("Index out of bounds given value with :{}", matrix_m24.round()))
+        }
     }
 
-    pub fn get_row_index_from_m14(matrix_m14: f32) -> usize {
-        ((matrix_m14 + 45.0) / 45.0) as usize - 1
+    pub fn get_row_index_from_m14(matrix_m14: f32) -> Result<usize, String> {
+        let medium = ((matrix_m14 + 45.0) / 45.0) as usize;
+        if medium > 0 {
+            Ok(medium - 1)
+        } else {
+            Err(format!("Index out of bounds given value with :{}", matrix_m14.round()))
+        }
     }
 
     pub fn check_full(&self, matrix_m24: f32) -> bool {
-        let index = Self::get_col_index_from_m24(matrix_m24);
+        let index = Self::get_col_index_from_m24(matrix_m24).unwrap();
         if self.data_length[index] == BLOCK_WIDTH {
             true
         } else {
@@ -80,8 +89,8 @@ impl BlockData {
     }
 
     pub fn get_top_block(&self, x_value: f32, y_value: f32) -> Option<Entity>{
-        let index = Self::get_row_index_from_m14(x_value);
-        let col_index = Self::get_col_index_from_m24(y_value);
+        let index = Self::get_row_index_from_m14(x_value).unwrap();
+        let col_index = Self::get_col_index_from_m24(y_value).unwrap();
         let mut ent: Option<Entity> = None;
         for col in 0..col_index {
             if let Some(entity) = self.data[col][index] {
@@ -92,8 +101,19 @@ impl BlockData {
         ent
     }
 
+    pub fn get_top_block_index(&self, row: usize, col: usize) -> Option<(usize,usize)>{
+        let mut ent: Option<(usize, usize)> = None;
+        for index in 0..col {
+            if let Some(entity) = self.data[index][row] {
+                ent.replace((row ,index));
+            }
+        }
+
+        ent
+    }
+
     pub fn remove_lows(&mut self, matrix_m24: f32) -> Vec<Option<Entity>> {
-        let index = Self::get_col_index_from_m24(matrix_m24);
+        let index = Self::get_col_index_from_m24(matrix_m24).unwrap();
         let mut upper_vec: Vec<Option<Entity>> = vec![];
         for count in index+1..BLOCK_HEIGHT {
             // Move count's vector to lower count's vector
@@ -118,14 +138,14 @@ impl BlockData {
 
         // If x value is lower then min value or same with width
         // If y value is lower then min value
-        if matrix_m14 == -BLOCK_SIZE || 
-            matrix_m14 == PLAY_PANE_WIDTH || 
-                matrix_m24 == 0.0 {
+        if matrix_m14 < 0.0 || 
+            matrix_m14 >= PLAY_PANE_WIDTH || 
+                matrix_m24 < BLOCK_SIZE {
             return false;
         }
 
-        let col_index = Self::get_col_index_from_m24(matrix_m24);
-        let row_index = Self::get_row_index_from_m14(matrix_m14);
+        let col_index = Self::get_col_index_from_m24(matrix_m24).expect("Failed to execute find block");
+        let row_index = Self::get_row_index_from_m14(matrix_m14).expect("Failed to execute find block");
         if let None = self.data[col_index][row_index] {
             false
         } else {
@@ -134,14 +154,14 @@ impl BlockData {
     }
 
     pub fn add_block(&mut self, matrix_m14:f32, matrix_m24: f32, entity: Entity) -> Result<(), &str> {
-        let col_index = Self::get_col_index_from_m24(matrix_m24);
-        let row_index = Self::get_row_index_from_m14(matrix_m14);
+        let col_index = Self::get_col_index_from_m24(matrix_m24).unwrap();
+        let row_index = Self::get_row_index_from_m14(matrix_m14).unwrap();
 
         if let None = self.data[col_index][row_index] {
             self.data[col_index][row_index].replace(entity);
             self.data_length[col_index] += 1;
         } else {
-            println!("Duplidate blocks hvae been found.");
+            println!("Duplidate blocks hvae been found with index ({}, {})", col_index, row_index);
             return Err("Game Over ... OR Hardly detected problem occured.");
         } 
 
@@ -151,12 +171,12 @@ impl BlockData {
     // Keep in mind that m14, or x value can be 0 
     // while m24, or y value must be either 45 or bigger.
     pub fn get_row(&self, matrix_m24: f32) -> Vec<Option<Entity>> {
-        let index = Self::get_col_index_from_m24(matrix_m24);
+        let index = Self::get_col_index_from_m24(matrix_m24).unwrap();
         self.data[index].clone()
     }
 
     pub fn clear_row(&mut self, matrix_m24: f32) {
-        let index = Self::get_col_index_from_m24(matrix_m24);
+        let index = Self::get_col_index_from_m24(matrix_m24).unwrap();
         for item in self.data[index].iter_mut() {
             *item = None;
         }

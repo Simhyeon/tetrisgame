@@ -2,12 +2,14 @@ use amethyst::{
     core::transform::{Transform, Parent},
     derive::SystemDesc,
     ecs::prelude::{Join, Read, ReadStorage, System, SystemData, World, WriteStorage, WriteExpect, LazyUpdate, Write, ReadExpect, Entity, Entities},
-    shrev::{ReaderId, EventChannel},
     ui::UiText,
 };
 
-use crate::component::stt_block::StaticBlock;
-use crate::world::{block_data::BlockData, score_text::ScoreText, collapse_status::CollapseStatus};
+use crate::world::{
+    block_data::BlockData, 
+    score_text::ScoreText, 
+    blockage::Blockage,
+};
 use crate::utils;
 
 #[derive(Default, SystemDesc)]
@@ -18,15 +20,14 @@ impl<'s> System<'s> for CollapseSystem {
         Entities<'s>,
         WriteStorage<'s, Transform>,
         ReadStorage<'s, Parent>,
-        ReadStorage<'s, StaticBlock>,
         WriteExpect<'s, BlockData>,
         WriteExpect<'s, ScoreText>,
-        WriteExpect<'s, CollapseStatus>,
+        ReadExpect<'s, Blockage>,
         WriteStorage<'s, UiText>
     );
 
-    fn run(&mut self, (entities, mut locals, parents, stt_blocks, mut block_data, mut score_text, mut collapse_status,mut ui_text) : Self::SystemData) {
-        if let CollapseStatus::Triggered = *collapse_status {
+    fn run(&mut self, (entities, mut locals, parents, mut block_data, mut score_text, blockage,mut ui_text) : Self::SystemData) {
+        if blockage.axis_down {
             // Collapse logic
             'outer : loop {
                 'inner : for index in 0..20 {
@@ -67,7 +68,6 @@ impl<'s> System<'s> for CollapseSystem {
                     }
                 }
                 // Break out of outer loop if no col_index is detected;
-                *collapse_status = CollapseStatus::None;
                 break 'outer;
             }
         }

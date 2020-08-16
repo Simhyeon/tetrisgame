@@ -1,34 +1,31 @@
 use amethyst::{
 //    prelude::*,
     core::timing::Time,
-    core::transform::Transform,
 //    core::SystemDesc,
     derive::SystemDesc,
     ecs::prelude::{ReadExpect, System, Read, SystemData, WriteStorage, World, ReadStorage, Join, WriteExpect},
-    shrev::{ReaderId, EventChannel},
+    shrev::{EventChannel, ReaderId},
 };
 
-use crate::component::dyn_block::{DynamicBlock, DynBlockHandler};
-use crate::component::stt_block::StaticBlock;
-use crate::system::stack_system::StackEvent;
-use crate::world::{
-    gravity_status::GravityStatus,
-    stack_status::StackStatus,
-    physics_queue::PhysicsQueue,
-};
+use crate::world::physics_queue::PhysicsQueue;
+
+pub enum Gravity{
+    Reset,
+    None,
+}
 
 #[derive(SystemDesc)]
 pub struct GravitySystem{
     pub time_delay: f32,
     //stop_gravity: bool,
     move_delay: f32,
-    reader_id : ReaderId<StackEvent>,
+    reader_id : ReaderId<Gravity>,
 }
 
 impl GravitySystem {
     pub fn new(world: &mut World) -> Self {
         <Self as System<'_>>::SystemData::setup(world);
-        let reader_id = world.fetch_mut::<EventChannel<StackEvent>>().register_reader();
+        let reader_id = world.fetch_mut::<EventChannel<Gravity>>().register_reader();
         Self { 
             time_delay : 0.0,
             move_delay : 1.0,
@@ -41,18 +38,20 @@ impl GravitySystem {
 impl<'s> System<'s> for GravitySystem{
     type SystemData = (
         Read<'s, Time>,
-        Read<'s, EventChannel<StackEvent>>,
-        ReadExpect<'s, GravityStatus>,
-        ReadExpect<'s, StackStatus>,
         WriteExpect<'s, PhysicsQueue>,
+        Read<'s, EventChannel<Gravity>>,
     );
 
-    fn run(&mut self, (time, event_channel, gravity_status, stack_status, mut queue): Self::SystemData){
+    fn run(&mut self, (time, mut queue, gravity_event): Self::SystemData){
 
-        // If gravity status is off then igrnoe run
-        if let GravityStatus::Off = *gravity_status {
-            self.time_delay = 0.0;
-            return;
+        for event in gravity_event.read(&mut self.reader_id) {
+            match event {
+                Gravity::Reset => {
+                    self.time_delay = 0.0;
+                    break;
+                }
+                _ => break
+            }
         }
 
         // Increase time_delay count
