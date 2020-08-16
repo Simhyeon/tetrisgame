@@ -83,7 +83,7 @@ impl<'s> System<'s> for PhysicsSystem {
             .iter()
             .map(|&entity| {
                 let local = locals.get(entity).unwrap().global_matrix();
-                (local.m14, local.m24)
+                (local.m14.round(), local.m24.round())
             }).collect();
 
         let origin = locals.get(handler.parent.unwrap()).unwrap().global_matrix().clone();
@@ -270,7 +270,10 @@ impl<'s> PhysicsSystem {
         for (x,y) in dyn_blocks.iter().map(|(x,y)| (BlockData::get_row_index_from_m14(*x).unwrap(), BlockData::get_col_index_from_m24(*y).unwrap())) {
 
             //x, y is entitytis' x and y
+            println!("Entity : ({}, {})", x, y);
             if let Some((row, col)) = block_data.get_top_block_index(x, y) {
+                println!("Static : ({}, {})", row, col);
+                println!("Comparing : <{}> with <{}>", distance, y - col - 1);
                 if y - col - 1<= distance {
                     distance = y - col - 1;
                 }
@@ -282,6 +285,7 @@ impl<'s> PhysicsSystem {
             }
         }
 
+        println!("Distance : {}", distance);
         distance as f32 * BLOCK_SIZE
     }
 

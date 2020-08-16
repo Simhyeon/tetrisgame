@@ -9,6 +9,7 @@ use amethyst::{
     shrev::{ReaderId, EventChannel},
 };
 
+use crate::component::dyn_block::DynBlockHandler;
 use crate::config::{MovementBindingTypes, AxisBinding, ActionBinding};
 use crate::world::{
     input_cache::InputCache,
@@ -101,10 +102,11 @@ impl<'s> System<'s> for KeyInputSystem {
         Read<'s, InputHandler<MovementBindingTypes>>,
         Read<'s, Time>,
         WriteExpect<'s, InputCache>,
-        ReadExpect<'s, BlockData,>,
+        ReadExpect<'s, DynBlockHandler,>,
+        ReadStorage<'s, Transform,>,
     );
 
-    fn run(&mut self, (input, time, mut input_cache, block_data): Self::SystemData) {
+    fn run(&mut self, (input, time, mut input_cache, handler, locals): Self::SystemData) {
 
         // get input value from key input
         let mut horizontal = input.axis_value(&AxisBinding::Horizontal).unwrap_or(0.0);
@@ -124,7 +126,12 @@ impl<'s> System<'s> for KeyInputSystem {
         input_cache.update_input(horizontal, vertical, rotate_right, rotate_left, shoot);
 
         if debug {
-            println!("{}", *block_data);
+            let mut st : String = "".to_string();
+            for item in handler.blocks.iter() {
+                let local = locals.get(*item).unwrap().global_matrix();
+                st.push_str(&format!("({}, {})", local.m14, local.m24));
+            }
+            println!("{}", st);
         }
     }
 }
