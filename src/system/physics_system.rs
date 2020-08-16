@@ -136,7 +136,6 @@ impl<'s> System<'s> for PhysicsSystem {
 
             self.check_axis_block(&dyn_blocks, &*block_data, &mut blockage);
             self.set_blockage(&mut new_queue, &mut rotation, &mut blockage);
-            //println!("Queue Length : {} --- Movement -> {:?}", new_queue.len(),self.movement_cache);
         }
         // This is the real logic to be executed
         origin.prepend_translation_x(self.movement_cache.0).prepend_translation_y(self.movement_cache.1);
@@ -189,7 +188,6 @@ impl<'s> PhysicsSystem {
             // Down Blockage
             if y == BLOCK_SIZE || 
                 block_data.find_block(x, y - BLOCK_SIZE) {
-                    println!("Blocking Y");
                     blockage.axis_down = true;
                     blockage.shoot = true;
             }
@@ -284,7 +282,6 @@ impl<'s> PhysicsSystem {
             }
         }
 
-        println!("Shoot distance : {}", distance as f32 * BLOCK_SIZE);
         distance as f32 * BLOCK_SIZE
     }
 

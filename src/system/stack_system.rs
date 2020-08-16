@@ -119,9 +119,6 @@ impl<'s> System<'s> for StackSystem {
         }
 
         if do_stack {
-            println!("--------------------------------------------");
-            println!("Stacked");
-            println!("--------------------------------------------");
             // Now stack the blocks
             for entity in &handler.blocks {
 
@@ -131,11 +128,6 @@ impl<'s> System<'s> for StackSystem {
                 match block_data.add_block(matrix_m.m14.round(), matrix_m.m24.round(), entity.clone()) {
                     Ok(_) => (),
                     Err(_) => {
-                        println!("--------------------------------------------");
-                        println!("--------------------------------------------");
-                        println!("{}", *block_data);
-                        println!("--------------------------------------------");
-                        println!("--------------------------------------------");
                         *game_event = GameEvent::GameOver;
                     }
                 }
