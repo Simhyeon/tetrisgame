@@ -36,3 +36,7 @@ I'm planning to write about what I've learnt about game development, data orient
 Since I'm not a professional programmer so my writing wouldn't be that helpful to most of the people but if whomever interested is welcomed.
 
 Link -> [For Planed]
+
+### Sample Image
+
+![sample](./sample.png)
